@@ -14,6 +14,9 @@
 //Static declarations
 static int do_exit();
 static int do_help();
+static int do_pwd();
+static int do_cd(char** c);
+static int do_alias(char** c);
 static int tokenize_input(char *input, char ***parsed, int *size_parsed);
 static void print_introduction();
 
@@ -28,10 +31,12 @@ struct shell_map {
 };
 
 struct shell_map shell_cmds[] = {
-        {"help",  do_help,  "display this help.",                                                            0, NULL},
-        {"exit",  do_exit,  "exit shell.",                                                                   0, NULL},
-        {"quit",  do_exit,  "exit shell.",                                                                   0, NULL},
-        //{"ls",    do_lsall, "list all directories and files contained in the currently mounted filesystem.", 0, ""},
+        {"help",    do_help,    "display this help.",                       0, NULL                     },
+        {"exit",    do_exit,    "exit shell.",                              0, NULL                     },
+        {"quit",    do_exit,    "exit shell.",                              0, NULL                     },
+        {"quit",    do_pwd,     "print name of current/working directory",  0, NULL                     },
+        {"cd",      do_cd,      "change directory.",                        1, "<pathname>"             },
+        {"alias",   do_alias,   "define or display aliases",                1, "[alias-name[=string]]"  },
 };
 
 int main() {
@@ -76,7 +81,7 @@ int main() {
                     --k;
                     if (err == 0) {
                         function = shell_cmds[k].fct;
-                        if ((shell_cmds[k]).argc == (size_t) size_parsed - 1) { //Does it have the right arguments ?
+                        if ((shell_cmds[k]).argc >= (size_t) size_parsed - 1) { //Does it have the right arguments ?
                             err = function(parsed);
                             if (err < 0) { //The function returned an error
                                 perror("Function returned an error\n");
@@ -156,7 +161,7 @@ static int tokenize_input(char *input, char ***parsed, int *size_parsed) {
         ++i;
     } while (i < l);
 
-    //Acknoledge the last word if not finished before
+    //Acknowledge the last word if not finished before
     if (k == 0) {
         if (*size_parsed > size - 1) {
             ++size;
@@ -186,6 +191,21 @@ static int do_help() {
         printf(": %s\n", shell_cmds[i].help);
     }
     return ERR_OK;
+}
+
+static int do_pwd() {
+    //TODO
+    return NOT_IMPLEMENTED;
+}
+
+static int do_cd(char** c) {
+    //TODO
+    return NOT_IMPLEMENTED;
+}
+
+static int do_alias(char** c) {
+    //TODO
+    return NOT_IMPLEMENTED;
 }
 
 static void print_introduction() {

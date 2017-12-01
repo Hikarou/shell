@@ -8,8 +8,6 @@
 #define ERR_OK 0
 #define EXIT 1
 #define ERR_ARGS 2
-#define ERR_NOT_MOUNTED 3
-#define ERR_FS 4
 #define NOT_IMPLEMENTED 5
 #define NB_ARGS 1
 
@@ -50,7 +48,6 @@ int main() {
     while ((!feof(stdin) && !ferror(stdin)) && err != EXIT) {
         size_parsed = 0;
         k = 0;
-        err = 0;
 
         parsed = calloc(NB_ARGS, sizeof(char *));
         if (parsed != NULL) {
@@ -70,6 +67,7 @@ int main() {
                 //tokenize the line
                 err = tokenize_input(input, &parsed, &size_parsed);
                 if (err == ERR_OK) {
+
                     //finding the function asked
                     do {
                         err = strcmp(parsed[0], shell_cmds[k].name);

@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -57,6 +59,30 @@ int main() {
     int size_parsed = 0;
     int k = 0;
     shell_fct function = NULL;
+    node env_var_root = NULL;
+
+    //reading the profile file
+    FILE *fp;
+    fp = fopen("profile", "r");
+    if (fp == NULL) {
+        fprintf(stderr, "no profile file found!\n");
+        exit(EXIT_FAILURE);
+    }
+
+    char *buf = NULL;
+    size_t size_buf = 0;
+    ssize_t nread;
+    while ((nread = getline(&buf, &size_buf, fp)) != -1) {
+        environment_var *tuple = extract_environment_var(buf);
+        if (tuple != NULL) {
+            insert_node(&env_var_root, tuple);
+        }
+    }
+
+    if (search(&env_var_root, "PATH") == NULL || search(&env_var_root, "HOME") == NULL) {
+        fprintf(stderr, "Profile file does not contain either PATH or HOME variable !\n");
+        exit(EXIT_FAILURE);
+    }
 
     print_introduction();
 
@@ -115,6 +141,8 @@ int main() {
             perror("Calloc Error\n");
             exit(EXIT_FAILURE);
         }
+
+        print_introduction();
     }
     return 0;
 }
@@ -212,7 +240,7 @@ static int do_pwd(char **c, int nb_args) {
         buf = realloc(buf, size * sizeof(char));
         if (buf == NULL) {
             fprintf(stderr, "Realloc of buffer failed\n");
-            exit(1);
+            exit(EXIT_FAILURE);
         }
         buf = getcwd(buf, size); //NULL terminated string
         //Fetch the pathname even though the initial allocated memory isn't enough
@@ -221,7 +249,7 @@ static int do_pwd(char **c, int nb_args) {
     //If it is null here, then another problem other than size of buffer
     if (buf == NULL) {
         fprintf(stderr, "PWD failed to get the pathname\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     fprintf(stdout, buf);
@@ -232,7 +260,7 @@ static int do_pwd(char **c, int nb_args) {
 static int do_cd(char **c, int nb_args) {
     if (nb_args != 1) {
         fprintf(stderr, "Number of arguments for pwd not possible\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     if (chdir(c[1]) != 0) {
@@ -292,7 +320,7 @@ static environment_var *extract_environment_var(char *input) {
 
     if (tuple->var == NULL || tuple->content == NULL) {
         fprintf(stderr, "Calloc failed in environment_var function\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     strncpy(tuple->var, input, var_length);

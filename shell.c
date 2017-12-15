@@ -14,15 +14,21 @@
 #define NB_ARGS 1
 
 //Static declarations
-static int do_exit(char** c, int);
-static int do_help(char** c, int);
-static int do_pwd(char** c, int);
-static int do_cd(char** c, int);
-static int do_alias(char** c, int);
+static int do_exit(char **c, int);
+
+static int do_help(char **c, int);
+
+static int do_pwd(char **c, int);
+
+static int do_cd(char **c, int);
+
+static int do_alias(char **c, int);
+
 static int tokenize_input(char *input, char ***parsed, int *size_parsed);
+
 static void print_introduction();
 
-typedef int (*shell_fct)(char **fct, int);
+typedef int (*shell_fct)(char **fct, int); ///fct contains function name and args
 
 struct shell_map {
     const char *name;    /// command name
@@ -33,12 +39,12 @@ struct shell_map {
 };
 
 struct shell_map shell_cmds[] = {
-        {"help",    do_help,    "display this help.",                       0, NULL                     },
-        {"exit",    do_exit,    "exit shell.",                              0, NULL                     },
-        {"quit",    do_exit,    "exit shell.",                              0, NULL                     },
-        {"pwd",     do_pwd,     "print name of current/working directory",  0, NULL                     },
-        {"cd",      do_cd,      "change directory.",                        1, "<pathname>"             },
-        {"alias",   do_alias,   "define or display aliases",                1, "[alias-name[=string]]"  },
+        {"help",  do_help,  "display this help.",                      0, NULL},
+        {"exit",  do_exit,  "exit shell.",                             0, NULL},
+        {"quit",  do_exit,  "exit shell.",                             0, NULL},
+        {"pwd",   do_pwd,   "print name of current/working directory", 0, NULL},
+        {"cd",    do_cd,    "change directory.",                       1, "<pathname>"},
+        {"alias", do_alias, "define or display aliases",               1, "[alias-name[=string]]"},
 };
 
 int main() {
@@ -180,11 +186,11 @@ static int tokenize_input(char *input, char ***parsed, int *size_parsed) {
     return 0;
 }
 
-static int do_exit(char** c, int nb_args) {
+static int do_exit(char **c, int nb_args) {
     return EXIT;
 }
 
-static int do_help(char** c, int nb_args) {
+static int do_help(char **c, int nb_args) {
     for (int i = 0; i < NB_CMDS; ++i) {
         printf("- %s", shell_cmds[i].name);
         if (shell_cmds[i].argc > 0) {
@@ -195,9 +201,13 @@ static int do_help(char** c, int nb_args) {
     return ERR_OK;
 }
 
-static int do_pwd(char** c, int nb_args) {
+static int do_pwd(char **c, int nb_args) {
+    if (nb_args != 0) {
+        fprintf(stderr, "Number of arguments for pwd not possible\n");
+        exit(1);
+    }
     unsigned int size = 128;
-    char *buf=NULL;
+    char *buf = NULL;
     do {
         size *= 2;
         buf = realloc(buf, size * sizeof(char));
@@ -206,7 +216,7 @@ static int do_pwd(char** c, int nb_args) {
             exit(1);
         }
         buf = getcwd(buf, size); //NULL terminated string
-    //Fetch the pathname even though the initial allocated memory isn't enough
+        //Fetch the pathname even though the initial allocated memory isn't enough
     } while (buf == NULL && errno == ERANGE);
 
     //If it is null here, then another problem other than size of buffer
@@ -220,22 +230,50 @@ static int do_pwd(char** c, int nb_args) {
     return ERR_OK;
 }
 
-static int do_cd(char** c, int nb_args) {
-    //TODO
-    return NOT_IMPLEMENTED;
+static int do_cd(char **c, int nb_args) {
+    if (nb_args != 1) {
+        fprintf(stderr, "Number of arguments for pwd not possible\n");
+        exit(1);
+    }
+
+    if (chdir(c[1]) != 0) {
+        switch (errno) {
+            case EACCES:
+                fprintf(stderr, "Search permission is denied for any component of the pathname\n");
+                break;
+            case ELOOP:
+                fprintf(stderr, "A loop exists in symbolic links encountered during resolution of the path argument\n");
+                break;
+            case ENAMETOOLONG:
+                fprintf(stderr, "The length of a component of a pathname is longer than {NAME_MAX}\n");
+                break;
+            case ENOENT:
+                fprintf(stderr, "A component of path does not name an existing directory or path is an empty string\n");
+                break;
+            case ENOTDIR:
+                fprintf(stderr,
+                        "A component of the pathname names an existing file that is neither a directory nor a symbolic link to a directory\n");
+                break;
+            default:
+                fprintf(stderr, "Something went wrong with cd\n");
+                break;
+        }
+        return -1;
+    }
+    return ERR_OK;
 }
 
-static int do_alias(char** c, int nb_args) {
+static int do_alias(char **c, int nb_args) {
     //TODO
     return NOT_IMPLEMENTED;
 }
 
 static void print_introduction() {
     time_t rawtime;
-    struct tm * timeinfo;
+    struct tm *timeinfo;
 
-    time (&rawtime);
+    time(&rawtime);
 
-    timeinfo = localtime (&rawtime);
-    fprintf(stdout,"%s Interprete ! >",asctime(timeinfo));
+    timeinfo = localtime(&rawtime);
+    fprintf(stdout, "%s Interprete ! >", asctime(timeinfo));
 }

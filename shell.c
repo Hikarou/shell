@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <time.h>
+#include <errno.h>
 
 #define MAX_READ 255
 #define NB_CMDS 13 //Change to something not static
@@ -12,9 +14,9 @@
 #define NB_ARGS 1
 
 //Static declarations
-static int do_exit();
-static int do_help();
-static int do_pwd();
+static int do_exit(char** c);
+static int do_help(char** c);
+static int do_pwd(char** c);
 static int do_cd(char** c);
 static int do_alias(char** c);
 static int tokenize_input(char *input, char ***parsed, int *size_parsed);
@@ -23,11 +25,11 @@ static void print_introduction();
 typedef int (*shell_fct)(char **fct);
 
 struct shell_map {
-    const char *name;    /// nom de la commande
-    shell_fct fct;       /// fonction réalisant la commande
-    const char *help;    /// description de la commande
-    size_t argc;         /// nombre d'arguments de la commande
-    const char *args;    /// description des arguments de la commande
+    const char *name;    /// command name
+    shell_fct fct;       /// function that is used
+    const char *help;    /// command's description
+    size_t argc;         /// number of arguments possible
+    const char *args;    /// arguments description
 };
 
 struct shell_map shell_cmds[] = {
@@ -178,11 +180,11 @@ static int tokenize_input(char *input, char ***parsed, int *size_parsed) {
     return 0;
 }
 
-static int do_exit() {
+static int do_exit(char** c) {
     return EXIT;
 }
 
-static int do_help() {
+static int do_help(char** c) {
     for (int i = 0; i < NB_CMDS; ++i) {
         printf("- %s", shell_cmds[i].name);
         if (shell_cmds[i].argc > 0) {

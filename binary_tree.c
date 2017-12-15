@@ -5,13 +5,44 @@
 #include <stdio.h>
 
 node *create_node(environment_var *data) {
+    printf("create_node init\n");
+    fflush(stdout);
     node *new_node = (node *) malloc(sizeof(node));
+
     if (new_node == NULL) {
         fprintf(stderr, "Out of memory!!! (create_node)\n");
         exit(1);
     }
-    memcpy(new_node->data.var, data->var, strlen(data->var));
-    memcpy(new_node->data.content, data->content, strlen(data->content));
+
+    new_node->data = malloc(sizeof(environment_var));
+    if (new_node->data == NULL) {
+        fprintf(stderr, "Out of memory!!! (create_node)\n");
+        exit(1);
+    }
+
+    printf("create_node after malloc\n");
+    printf("create_node before calloc of (%zu, %zu)\n", strlen(data->var), sizeof(char));
+    fflush(stdout);
+    new_node->data->var = calloc(strlen(data->var), sizeof(char));
+    printf("create_node after first calloc\n");
+    fflush(stdout);
+    if (new_node->data->var == NULL) {
+        fprintf(stderr, "create_node malloc failed\n");
+        exit(EXIT_FAILURE);
+    }
+    strncpy(new_node->data->var, data->var, strlen(data->var));
+    printf("create_node after first strncpy\n");
+    fflush(stdout);
+    new_node->data->content = calloc(strlen(data->content), sizeof(char));
+    printf("create_node after second calloc\n");
+    fflush(stdout);
+    if (new_node->data->content == NULL) {
+        fprintf(stderr, "create_node malloc failed\n");
+        exit(EXIT_FAILURE);
+    }
+    strncpy(new_node->data->content, data->content, strlen(data->content));
+    printf("create_node after second strncpy\n");
+    fflush(stdout);
     new_node->left = NULL;
     new_node->right = NULL;
     return new_node;
@@ -19,6 +50,8 @@ node *create_node(environment_var *data) {
 
 node *insert_node(node *root, environment_var *data) {
 
+    printf("insert_node init\n");
+    fflush(stdout);
     if (root == NULL) {
         root = create_node(data);
     } else {
@@ -28,7 +61,7 @@ node *insert_node(node *root, environment_var *data) {
         node *prev = NULL;
 
         while (cursor != NULL) {
-            r = strcmp(data->var, cursor->data.var);
+            r = strcmp(data->var, cursor->data->var);
             prev = cursor;
             if (r < 0) {
                 is_left = 1;
@@ -55,7 +88,7 @@ node *delete_node(node *root, environment_var *data) {
         return NULL;
 
     node *cursor;
-    int r = strcmp(data->var, root->data.var);
+    int r = strcmp(data->var, root->data->var);
     if (r < 0)
         root->left = delete_node(root->left, data);
     else if (r > 0)
@@ -79,9 +112,9 @@ node *delete_node(node *root, environment_var *data) {
             }
             root->data = cursor->data;
             if (parent != NULL) {
-                parent->left = delete_node(parent->left, &parent->left->data);
+                parent->left = delete_node(parent->left, parent->left->data);
             } else {
-                root->right = delete_node(root->right, &root->right->data);
+                root->right = delete_node(root->right, root->right->data);
             }
         }
     }
@@ -95,12 +128,12 @@ node *search(node *root, const char *var) {
     int r;
     node *cursor = root;
     while (cursor != NULL) {
-        r = strcmp(var, cursor->data.var);
+        r = strcmp(var, cursor->data->var);
         if (r < 0) {
             cursor = cursor->left;
         } else if (r > 0) {
             cursor = cursor->right;
-        } else{
+        } else {
             break;
         }
     }

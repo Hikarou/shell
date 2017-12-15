@@ -7,7 +7,7 @@ typedef struct environnement_var_st {
 } environment_var;
 
 typedef struct node {
-    environment_var data;
+    environment_var *data;
     struct node *left;
     struct node *right;
 } node;

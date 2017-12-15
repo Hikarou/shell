@@ -193,9 +193,29 @@ static int do_help() {
     return ERR_OK;
 }
 
-static int do_pwd() {
-    //TODO
-    return NOT_IMPLEMENTED;
+static int do_pwd(char** c) {
+    unsigned int size = 128;
+    char *buf=NULL;
+    do {
+        size *= 2;
+        buf = realloc(buf, size * sizeof(char));
+        if (buf == NULL) {
+            fprintf(stderr, "Realloc of buffer failed\n");
+            exit(1);
+        }
+        buf = getcwd(buf, size); //NULL terminated string
+    //Fetch the pathname even though the initial allocated memory isn't enough
+    } while (buf == NULL && errno == ERANGE);
+
+    //If it is null here, then another problem other than size of buffer
+    if (buf == NULL) {
+        fprintf(stderr, "PWD failed to get the pathname\n");
+        exit(1);
+    }
+
+    fprintf(stdout, buf);
+    fprintf(stdout, "\n");
+    return ERR_OK;
 }
 
 static int do_cd(char** c) {

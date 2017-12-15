@@ -88,20 +88,21 @@ node *delete_node(node *root, environment_var *data) {
     return root;
 }
 
-node *search(node *root, const environment_var *data) {
+node *search(node *root, const char *var) {
     if (root == NULL)
         return NULL;
 
     int r;
     node *cursor = root;
     while (cursor != NULL) {
-        r = strcmp(data->var, cursor->data.var);
-        if (r < 0)
+        r = strcmp(var, cursor->data.var);
+        if (r < 0) {
             cursor = cursor->left;
-        else if (r > 0)
+        } else if (r > 0) {
             cursor = cursor->right;
-        else
-            return cursor;
+        } else{
+            break;
+        }
     }
     return cursor;
 

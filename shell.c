@@ -14,15 +14,15 @@
 #define NB_ARGS 1
 
 //Static declarations
-static int do_exit(char** c);
-static int do_help(char** c);
-static int do_pwd(char** c);
-static int do_cd(char** c);
-static int do_alias(char** c);
+static int do_exit(char** c, int);
+static int do_help(char** c, int);
+static int do_pwd(char** c, int);
+static int do_cd(char** c, int);
+static int do_alias(char** c, int);
 static int tokenize_input(char *input, char ***parsed, int *size_parsed);
 static void print_introduction();
 
-typedef int (*shell_fct)(char **fct);
+typedef int (*shell_fct)(char **fct, int);
 
 struct shell_map {
     const char *name;    /// command name
@@ -36,7 +36,7 @@ struct shell_map shell_cmds[] = {
         {"help",    do_help,    "display this help.",                       0, NULL                     },
         {"exit",    do_exit,    "exit shell.",                              0, NULL                     },
         {"quit",    do_exit,    "exit shell.",                              0, NULL                     },
-        {"quit",    do_pwd,     "print name of current/working directory",  0, NULL                     },
+        {"pwd",     do_pwd,     "print name of current/working directory",  0, NULL                     },
         {"cd",      do_cd,      "change directory.",                        1, "<pathname>"             },
         {"alias",   do_alias,   "define or display aliases",                1, "[alias-name[=string]]"  },
 };
@@ -84,7 +84,7 @@ int main() {
                     if (err == 0) {
                         function = shell_cmds[k].fct;
                         if ((shell_cmds[k]).argc >= (size_t) size_parsed - 1) { //Does it have the right arguments ?
-                            err = function(parsed);
+                            err = function(parsed, size_parsed - 1);
                             if (err < 0) { //The function returned an error
                                 perror("Function returned an error\n");
                             }
@@ -180,11 +180,11 @@ static int tokenize_input(char *input, char ***parsed, int *size_parsed) {
     return 0;
 }
 
-static int do_exit(char** c) {
+static int do_exit(char** c, int nb_args) {
     return EXIT;
 }
 
-static int do_help(char** c) {
+static int do_help(char** c, int nb_args) {
     for (int i = 0; i < NB_CMDS; ++i) {
         printf("- %s", shell_cmds[i].name);
         if (shell_cmds[i].argc > 0) {
@@ -195,7 +195,7 @@ static int do_help(char** c) {
     return ERR_OK;
 }
 
-static int do_pwd(char** c) {
+static int do_pwd(char** c, int nb_args) {
     unsigned int size = 128;
     char *buf=NULL;
     do {
@@ -220,12 +220,12 @@ static int do_pwd(char** c) {
     return ERR_OK;
 }
 
-static int do_cd(char** c) {
+static int do_cd(char** c, int nb_args) {
     //TODO
     return NOT_IMPLEMENTED;
 }
 
-static int do_alias(char** c) {
+static int do_alias(char** c, int nb_args) {
     //TODO
     return NOT_IMPLEMENTED;
 }

@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <errno.h>
+#include <assert.h>
 #include "binary_tree.h"
 
 #define MAX_READ 255
@@ -53,13 +54,19 @@ struct shell_map shell_cmds[] = {
 };
 
 int main() {
+
+    printf("Init\n");
+    fflush(stdout);
     char input[MAX_READ + 1] = "";
     char **parsed = NULL;
     int err = 0;
     int size_parsed = 0;
     int k = 0;
     shell_fct function = NULL;
-    node env_var_root = NULL;
+    node *env_var_root = NULL;
+
+    printf("before open profile file\n");
+    fflush(stdout);
 
     //reading the profile file
     FILE *fp;
@@ -69,17 +76,34 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
+
+    printf("before init profile file\n");
+    fflush(stdout);
     char *buf = NULL;
     size_t size_buf = 0;
     ssize_t nread;
+    printf("before reading profile file\n");
+    fflush(stdout);
     while ((nread = getline(&buf, &size_buf, fp)) != -1) {
+        printf("Retrieved line of length %zu\n", nread);
+        fflush(stdout);
         environment_var *tuple = extract_environment_var(buf);
+        printf("extract_environment_var done\n");
+        fflush(stdout);
         if (tuple != NULL) {
-            insert_node(&env_var_root, tuple);
+            env_var_root = insert_node(env_var_root, tuple);
+            printf("insert_node done\n");
+            fflush(stdout);
         }
     }
 
-    if (search(&env_var_root, "PATH") == NULL || search(&env_var_root, "HOME") == NULL) {
+    free(buf);
+    fclose(fp);
+
+
+    printf("before checking profile file\n");
+    fflush(stdout);
+    if (search(env_var_root, "PATH") == NULL || search(env_var_root, "HOME") == NULL) {
         fprintf(stderr, "Profile file does not contain either PATH or HOME variable !\n");
         exit(EXIT_FAILURE);
     }
@@ -144,7 +168,7 @@ int main() {
 
         print_introduction();
     }
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 /**
@@ -306,15 +330,20 @@ static void print_introduction() {
 }
 
 static environment_var *extract_environment_var(char *input) {
+    printf("extract_environment init\n");
+    fflush(stdout);
     char *middle = strchr(input, '=');
     if (middle == NULL) {
         fprintf(stderr, "No '=' char in the input\n");
         return NULL;
     }
+    printf("extract_environment found middle\n");
+    fflush(stdout);
 
-    unsigned long var_length = middle - input + 1;
+    unsigned long var_length = middle - input;
     unsigned long content_length = strlen(input) - var_length + 1;
     environment_var *tuple = malloc(sizeof(environment_var));
+    assert(tuple);
     tuple->var = calloc(var_length + 1, sizeof(char));//+1 for null terminating string
     tuple->content = calloc(content_length + 1, sizeof(char));
 
@@ -322,9 +351,17 @@ static environment_var *extract_environment_var(char *input) {
         fprintf(stderr, "Calloc failed in environment_var function\n");
         exit(EXIT_FAILURE);
     }
+    printf("extract_environment sizes found : %zu, %zu\n", var_length, content_length);
+    fflush(stdout);
 
-    strncpy(tuple->var, input, var_length);
-    strncpy(tuple->content, middle + 1, var_length); //+1 to get rid of the =
+    tuple->var = strncpy(tuple->var, input, var_length);
+    assert(tuple->var);
+    printf("extract_environment first strncpy\n");
+    fflush(stdout);
+    tuple->content = strncpy(tuple->content, middle + 1, content_length-1); //+1 to get rid of the =
+    assert(tuple->content);
+    printf("extract_environment second strncpy\n");
+    fflush(stdout);
 
     return tuple;
 }

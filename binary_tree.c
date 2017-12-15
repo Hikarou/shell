@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 
-node *create_node(environnement_var *data) {
+node *create_node(environment_var *data) {
     node *new_node = (node *) malloc(sizeof(node));
     if (new_node == NULL) {
         fprintf(stderr, "Out of memory!!! (create_node)\n");
@@ -17,7 +17,7 @@ node *create_node(environnement_var *data) {
     return new_node;
 }
 
-node *insert_node(node *root, environnement_var *data) {
+node *insert_node(node *root, environment_var *data) {
 
     if (root == NULL) {
         root = create_node(data);
@@ -50,7 +50,7 @@ node *insert_node(node *root, environnement_var *data) {
     return root;
 }
 
-node *delete_node(node *root, environnement_var *data) {
+node *delete_node(node *root, environment_var *data) {
     if (root == NULL)
         return NULL;
 
@@ -88,7 +88,7 @@ node *delete_node(node *root, environnement_var *data) {
     return root;
 }
 
-node *search(node *root, const environnement_var *data) {
+node *search(node *root, const environment_var *data) {
     if (root == NULL)
         return NULL;
 

@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <errno.h>
+#include "binary_tree.h"
 
 #define MAX_READ 255
 #define NB_CMDS 13 //Change to something not static
@@ -27,6 +28,8 @@ static int do_alias(char **c, int);
 static int tokenize_input(char *input, char ***parsed, int *size_parsed);
 
 static void print_introduction();
+
+static environment_var *extract_environment_var(char *input);
 
 typedef int (*shell_fct)(char **fct, int); ///fct contains function name and args
 
@@ -202,10 +205,6 @@ static int do_help(char **c, int nb_args) {
 }
 
 static int do_pwd(char **c, int nb_args) {
-    if (nb_args != 0) {
-        fprintf(stderr, "Number of arguments for pwd not possible\n");
-        exit(1);
-    }
     unsigned int size = 128;
     char *buf = NULL;
     do {
@@ -276,4 +275,28 @@ static void print_introduction() {
 
     timeinfo = localtime(&rawtime);
     fprintf(stdout, "%s Interprete ! >", asctime(timeinfo));
+}
+
+static environment_var *extract_environment_var(char *input) {
+    char *middle = strchr(input, '=');
+    if (middle == NULL) {
+        fprintf(stderr, "No '=' char in the input\n");
+        return NULL;
+    }
+
+    unsigned long var_length = middle - input + 1;
+    unsigned long content_length = strlen(input) - var_length + 1;
+    environment_var *tuple = malloc(sizeof(environment_var));
+    tuple->var = calloc(var_length + 1, sizeof(char));//+1 for null terminating string
+    tuple->content = calloc(content_length + 1, sizeof(char));
+
+    if (tuple->var == NULL || tuple->content == NULL) {
+        fprintf(stderr, "Calloc failed in environment_var function\n");
+        exit(1);
+    }
+
+    strncpy(tuple->var, input, var_length);
+    strncpy(tuple->content, middle + 1, var_length); //+1 to get rid of the =
+
+    return tuple;
 }

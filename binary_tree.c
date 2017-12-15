@@ -59,6 +59,7 @@ node *insert_node(node *root, environment_var *data) {
         int r = 0;
         node *cursor = root;
         node *prev = NULL;
+        node *new_node = create_node(data);
 
         while (cursor != NULL) {
             r = strcmp(data->var, cursor->data->var);
@@ -69,13 +70,17 @@ node *insert_node(node *root, environment_var *data) {
             } else if (r > 0) {
                 is_left = 0;
                 cursor = cursor->right;
+            } else { //if the node exists, then we erase the old value
+                new_node->left = cursor->left;
+                new_node->right = cursor->right;
+                free(cursor);
+                break;
             }
-
         }
         if (is_left) {
-            prev->left = create_node(data);
+            prev->left = new_node;
         } else {
-            prev->right = create_node(data);
+            prev->right = new_node;
         }
 
     }

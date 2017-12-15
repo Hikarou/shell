@@ -151,3 +151,25 @@ void dispose(node *root) {
         free(root);
     }
 }
+
+void display(node* nd)
+{
+    if(nd != NULL)
+        printf("%s=%s ",nd->data->var, nd->data->var);
+}
+
+void display_tree(node* nd)
+{
+    if (nd == NULL)
+        return;
+    /* display node data */
+    display(nd);
+    if(nd->left != NULL)
+        printf("(L:%s)",nd->left->data->var);
+    if(nd->right != NULL)
+        printf("(R:%s)",nd->right->data->var);
+    printf("\n");
+
+    display_tree(nd->left);
+    display_tree(nd->right);
+}

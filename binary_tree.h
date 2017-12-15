@@ -12,8 +12,6 @@ typedef struct node {
     struct node *right;
 } node;
 
-typedef void (*callback)(node *);
-
 node *create_node(environment_var *data);
 
 node *insert_node(node *root, environment_var *data);
@@ -21,8 +19,6 @@ node *insert_node(node *root, environment_var *data);
 node *delete_node(node *root, environment_var *data);
 
 node *search(node *root, const char *data);
-
-void traverse(node *root, callback cb);
 
 void dispose(node *root);
 

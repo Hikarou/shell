@@ -108,37 +108,6 @@ node *search(node *root, const char *var) {
 
 }
 
-// in order
-void traverse(node *root, callback cb) {
-    node *cursor, *pre;
-
-    if (root == NULL)
-        return;
-
-    cursor = root;
-
-    while (cursor != NULL) {
-        if (cursor->left != NULL) {
-            cb(cursor);
-            cursor = cursor->right;
-        } else {
-            pre = cursor->left;
-
-            while (pre->right != NULL && pre->right != cursor)
-                pre = pre->right;
-
-            if (pre->right != NULL) {
-                pre->right = cursor;
-                cursor = cursor->left;
-            } else {
-                pre->right = NULL;
-                cb(cursor);
-                cursor = cursor->right;
-            }
-        }
-    }
-}
-
 /*
     recursively remove all nodes of the tree
 */

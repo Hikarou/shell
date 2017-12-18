@@ -10,7 +10,7 @@
 #include "binary_tree.h"
 
 #define MAX_READ 255
-#define NB_CMDS 13 //Change to something not static
+#define NB_CMDS 6 //Change to something not static
 #define ERR_OK 0
 #define EXIT 1
 #define ERR_ARGS 2
@@ -44,6 +44,8 @@ struct shell_map {
     const char *args;    /// arguments description
 };
 
+node *env_var_root; ///Binary tree which will contain all the environment variables
+
 struct shell_map shell_cmds[] = {
         {"help",  do_help,  "display this help.",                      0, NULL},
         {"exit",  do_exit,  "exit shell.",                             0, NULL},
@@ -63,7 +65,7 @@ int main() {
     int size_parsed = 0;
     int k = 0;
     shell_fct function = NULL;
-    node *env_var_root = NULL;
+    env_var_root = NULL;
 
     printf("before open profile file\n");
     fflush(stdout);
@@ -95,6 +97,7 @@ int main() {
             printf("insert_node done\n");
             fflush(stdout);
         }
+        free(tuple);
     }
 
     free(buf);
@@ -155,9 +158,6 @@ int main() {
                         printf("ERROR SHELL: Invalid command\n");
                         err = ERR_ARGS;
                     }
-                }
-                if (err != EXIT) {
-                    print_introduction();
                 }
             }
             free(parsed);
@@ -315,8 +315,25 @@ static int do_cd(char **c, int nb_args) {
 }
 
 static int do_alias(char **c, int nb_args) {
-    //TODO
-    return NOT_IMPLEMENTED;
+    //Alias called without argument
+    if (nb_args == 0) {
+        display_tree(env_var_root);
+        return ERR_OK;
+    }
+
+    environment_var *alias = extract_environment_var(c[1]);
+    if (alias == NULL) { //alias called without '=' in arguments
+        node *nd = search(env_var_root, c[1]);
+        if (nd != NULL) {
+            display(nd);
+        }
+        free(alias);
+        return ERR_OK;
+    }
+    //Create or update the new environment variable
+    insert_node(env_var_root, alias);
+    free(alias);
+    return ERR_OK;
 }
 
 static void print_introduction() {
@@ -326,7 +343,11 @@ static void print_introduction() {
     time(&rawtime);
 
     timeinfo = localtime(&rawtime);
-    fprintf(stdout, "%s Interprete ! >", asctime(timeinfo));
+    char *buf= asctime(timeinfo);
+    char *bufBis = calloc(strlen(buf), sizeof(char));
+    strncpy(bufBis, buf, strlen(buf)-1);
+    fprintf(stdout, "%s | Interprete ! >", bufBis);
+    free(bufBis);
 }
 
 static environment_var *extract_environment_var(char *input) {
@@ -334,7 +355,6 @@ static environment_var *extract_environment_var(char *input) {
     fflush(stdout);
     char *middle = strchr(input, '=');
     if (middle == NULL) {
-        fprintf(stderr, "No '=' char in the input\n");
         return NULL;
     }
     printf("extract_environment found middle\n");
@@ -358,7 +378,7 @@ static environment_var *extract_environment_var(char *input) {
     assert(tuple->var);
     printf("extract_environment first strncpy\n");
     fflush(stdout);
-    tuple->content = strncpy(tuple->content, middle + 1, content_length-1); //+1 to get rid of the =
+    tuple->content = strncpy(tuple->content, middle + 1, content_length - 1); //+1 to get rid of the =
     assert(tuple->content);
     printf("extract_environment second strncpy\n");
     fflush(stdout);

@@ -45,6 +45,7 @@ struct shell_map {
 };
 
 node *env_var_root; ///Binary tree which will contain all the environment variables
+node *alias_root; ///Binary tree which will contain all the environment variables
 
 struct shell_map shell_cmds[] = {
         {"help",  do_help,  "display this help.",                      0, NULL},
@@ -136,27 +137,34 @@ int main() {
                 //tokenize the line
                 err = tokenize_input(input, &parsed, &size_parsed);
                 if (err == ERR_OK) {
+                    if (size_parsed == 1 && strchr(input, '=') != NULL) {
+                        //New environnment var
+                        environment_var *new = extract_environment_var(parsed[0]);
+                        insert_node(env_var_root, new);
+                    } else {
+                        //Expand if needed
 
-                    //finding the function asked
-                    do {
-                        err = strcmp(parsed[0], shell_cmds[k].name);
-                        ++k;
-                    } while (k < NB_CMDS && err != 0);
-                    --k;
-                    if (err == 0) {
-                        function = shell_cmds[k].fct;
-                        if ((shell_cmds[k]).argc >= (size_t) size_parsed - 1) { //Does it have the right arguments ?
-                            err = function(parsed, size_parsed - 1);
-                            if (err < 0) { //The function returned an error
-                                perror("Function returned an error\n");
+                        //finding the function asked
+                        do {
+                            err = strcmp(parsed[0], shell_cmds[k].name);
+                            ++k;
+                        } while (k < NB_CMDS && err != 0);
+                        --k;
+                        if (err == 0) {
+                            function = shell_cmds[k].fct;
+                            if ((shell_cmds[k]).argc >= (size_t) size_parsed - 1) { //Does it have the right arguments ?
+                                err = function(parsed, size_parsed - 1);
+                                if (err < 0) { //The function returned an error
+                                    perror("Function returned an error\n");
+                                }
+                            } else {
+                                printf("ERROR SHELL: wrong number of arguements\n");
+                                err = ERR_ARGS;
                             }
-                        } else {
-                            printf("ERROR SHELL: wrong number of arguements\n");
+                        } else { //Command does not exist or not implemented
+                            printf("ERROR SHELL: Invalid command\n");
                             err = ERR_ARGS;
                         }
-                    } else { //Command does not exist or not implemented
-                        printf("ERROR SHELL: Invalid command\n");
-                        err = ERR_ARGS;
                     }
                 }
             }
@@ -284,8 +292,9 @@ static int do_pwd(char **c, int nb_args) {
 
 static int do_cd(char **c, int nb_args) {
     char *pathname;
+    // Take car of the cd without argument (Goes to the HOME path)
     if (nb_args == 0) {
-        pathname = search(env_var_root,"HOME")->data->content; //Should always work since
+        pathname = search(env_var_root, "HOME")->data->content; //Should always work since
     } else {
         pathname = c[1];
     }
@@ -319,13 +328,13 @@ static int do_cd(char **c, int nb_args) {
 static int do_alias(char **c, int nb_args) {
     //Alias called without argument
     if (nb_args == 0) {
-        display_tree(env_var_root);
+        display_tree(alias_root);
         return ERR_OK;
     }
 
     environment_var *alias = extract_environment_var(c[1]);
     if (alias == NULL) { //alias called without '=' in arguments
-        node *nd = search(env_var_root, c[1]);
+        node *nd = search(alias_root, c[1]);
         if (nd != NULL) {
             display(nd);
         }
@@ -333,7 +342,7 @@ static int do_alias(char **c, int nb_args) {
         return ERR_OK;
     }
     //Create or update the new environment variable
-    insert_node(env_var_root, alias);
+    insert_node(alias_root, alias);
     free(alias);
     return ERR_OK;
 }
@@ -345,9 +354,9 @@ static void print_introduction() {
     time(&rawtime);
 
     timeinfo = localtime(&rawtime);
-    char *buf= asctime(timeinfo);
+    char *buf = asctime(timeinfo);
     char *bufBis = calloc(strlen(buf), sizeof(char));
-    strncpy(bufBis, buf, strlen(buf)-1);
+    strncpy(bufBis, buf, strlen(buf) - 1);
     fprintf(stdout, "%s | Interprete ! >", bufBis);
     free(bufBis);
 }

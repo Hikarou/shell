@@ -1,5 +1,18 @@
 #define _GNU_SOURCE
 
+#ifdef __GNUC__
+#  define UNUSED(x) UNUSED_ ## x __attribute__((__unused__))
+#else
+#  define UNUSED(x) UNUSED_ ## x
+#endif
+
+#ifdef __GNUC__
+#  define UNUSED_FUNCTION(x) __attribute__((__unused__)) UNUSED_ ## x
+#else
+#  define UNUSED_FUNCTION(x) UNUSED_ ## x
+#endif
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,11 +31,11 @@
 #define NB_ARGS 1
 
 //Static declarations
-static int do_exit(char **c, int);
+static int do_exit(char **, int);
 
-static int do_help(char **c, int);
+static int do_help(char **, int);
 
-static int do_pwd(char **c, int);
+static int do_pwd(char **, int);
 
 static int do_cd(char **c, int);
 
@@ -118,7 +131,7 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-        print_introduction();
+    print_introduction();
 
     //Reading the standard input
     while ((!feof(stdin) && !ferror(stdin)) && err != EXIT) {
@@ -273,18 +286,11 @@ static int tokenize_input(char *input, char ***parsed, int *size_parsed) {
     return 0;
 }
 
-static int do_exit(char **c, int nb_args) {
-    // Get rid of unused vars warning
-    (void) c;
-    (void) nb_args;
-
+static int do_exit(char **UNUSED(c), int UNUSED(nb_args)) {
     return EXIT;
 }
 
-static int do_help(char **c, int nb_args) {
-    // Get rid of unused vars warning
-    (void) c;
-    (void) nb_args;
+static int do_help(char **UNUSED(c), int UNUSED(nb_args)) {
     for (int i = 0; i < NB_CMDS; ++i) {
         printf("- %s", shell_cmds[i].name);
         if (shell_cmds[i].argc > 0) {
@@ -295,10 +301,7 @@ static int do_help(char **c, int nb_args) {
     return ERR_OK;
 }
 
-static int do_pwd(char **c, int nb_args) {
-    // Get rid of unused vars warning
-    (void) c;
-    (void) nb_args;
+static int do_pwd(char **UNUSED(c), int UNUSED(nb_args)) {
     unsigned int size = 128;
     char *buf = NULL;
     do {

@@ -44,7 +44,7 @@ struct shell_map {
     const char *args;    /// arguments description
 };
 
-node *env_var_root; ///Binary tree which will contain all the environment variables
+//node *env_var_root; ///Binary tree which will contain all the environment variables TODO Ask Hoerdt
 node *alias_root; ///Binary tree which will contain all the environment variables
 
 struct shell_map shell_cmds[] = {
@@ -66,7 +66,7 @@ int main() {
     int size_parsed = 0;
     int k = 0;
     shell_fct function = NULL;
-    env_var_root = NULL;
+    //env_var_root = NULL;
 
     printf("before open profile file\n");
     fflush(stdout);
@@ -94,11 +94,12 @@ int main() {
         printf("extract_environment_var done\n");
         fflush(stdout);
         if (tuple != NULL) {
-            env_var_root = insert_node(env_var_root, tuple);
+            //env_var_root = insert_node(env_var_root, tuple); TODO Ask for environment var
+            setenv(tuple->var, tuple->content, 1);
             printf("insert_node done\n");
             fflush(stdout);
         }
-        free(tuple);
+        free_env_var(tuple);
     }
 
     free(buf);
@@ -107,12 +108,17 @@ int main() {
 
     printf("before checking profile file\n");
     fflush(stdout);
+    /* TODO
     if (search(env_var_root, "PATH") == NULL || search(env_var_root, "HOME") == NULL) {
+        fprintf(stderr, "Profile file does not contain either PATH or HOME variable !\n");
+        exit(EXIT_FAILURE);
+    } //*/
+    if (getenv("PATH") == NULL || getenv("PATH") == NULL) {
         fprintf(stderr, "Profile file does not contain either PATH or HOME variable !\n");
         exit(EXIT_FAILURE);
     }
 
-    print_introduction();
+        print_introduction();
 
     //Reading the standard input
     while ((!feof(stdin) && !ferror(stdin)) && err != EXIT) {
@@ -138,9 +144,26 @@ int main() {
                 err = tokenize_input(input, &parsed, &size_parsed);
                 if (err == ERR_OK) {
                     if (size_parsed == 1 && strchr(input, '=') != NULL) {
+                        /* TODO Ask Hoerdt if need to use set/getEnv
                         //New environnment var
                         environment_var *new = extract_environment_var(parsed[0]);
                         insert_node(env_var_root, new);
+                        //*/
+                        environment_var *new = extract_environment_var(parsed[0]);
+                        setenv(new->var, new->content, 1); //1 for overwriting
+                        free_env_var(new);
+                    } else if (size_parsed == 1 && parsed[0][0] == '$') { //Printing the envrionment asked
+                        size_t length_var = strlen(parsed[0]) - 1;
+                        char *var = calloc(length_var, sizeof(char));
+                        assert(var);
+                        strncpy(var, parsed[0] + 1, length_var);
+                        char *content = getenv(var);
+                        if (content != NULL) {
+                            printf("$%s=%s\n", var, content);
+                        } else {
+                            printf("\n");
+                        }
+                        free(var);
                     } else {
                         //Expand if needed
 
@@ -287,6 +310,7 @@ static int do_pwd(char **c, int nb_args) {
 
     fprintf(stdout, buf);
     fprintf(stdout, "\n");
+    free(buf);
     return ERR_OK;
 }
 
@@ -294,7 +318,8 @@ static int do_cd(char **c, int nb_args) {
     char *pathname;
     // Take car of the cd without argument (Goes to the HOME path)
     if (nb_args == 0) {
-        pathname = search(env_var_root, "HOME")->data->content; //Should always work since
+        //pathname = search(env_var_root, "HOME")->data->content; //Should always work since TODO Ask Hoerdt
+        pathname = getenv("HOME");
     } else {
         pathname = c[1];
     }

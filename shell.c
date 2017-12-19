@@ -113,7 +113,7 @@ int main() {
         fprintf(stderr, "Profile file does not contain either PATH or HOME variable !\n");
         exit(EXIT_FAILURE);
     } //*/
-    if (getenv("PATH") == NULL || getenv("PATH") == NULL) {
+    if (getenv("PATH") == NULL || getenv("HOME") == NULL) {
         fprintf(stderr, "Profile file does not contain either PATH or HOME variable !\n");
         exit(EXIT_FAILURE);
     }
@@ -274,10 +274,17 @@ static int tokenize_input(char *input, char ***parsed, int *size_parsed) {
 }
 
 static int do_exit(char **c, int nb_args) {
+    // Get rid of unused vars warning
+    (void) c;
+    (void) nb_args;
+
     return EXIT;
 }
 
 static int do_help(char **c, int nb_args) {
+    // Get rid of unused vars warning
+    (void) c;
+    (void) nb_args;
     for (int i = 0; i < NB_CMDS; ++i) {
         printf("- %s", shell_cmds[i].name);
         if (shell_cmds[i].argc > 0) {
@@ -289,6 +296,9 @@ static int do_help(char **c, int nb_args) {
 }
 
 static int do_pwd(char **c, int nb_args) {
+    // Get rid of unused vars warning
+    (void) c;
+    (void) nb_args;
     unsigned int size = 128;
     char *buf = NULL;
     do {

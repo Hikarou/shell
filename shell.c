@@ -165,7 +165,8 @@ int main() {
             perror("Calloc Error\n");
             exit(EXIT_FAILURE);
         }
-
+        fflush(stderr);
+        fflush(stdout);
         print_introduction();
     }
     return EXIT_SUCCESS;
@@ -282,12 +283,13 @@ static int do_pwd(char **c, int nb_args) {
 }
 
 static int do_cd(char **c, int nb_args) {
-    if (nb_args != 1) {
-        fprintf(stderr, "Number of arguments for pwd not possible\n");
-        exit(EXIT_FAILURE);
+    char *pathname;
+    if (nb_args == 0) {
+        pathname = search(env_var_root,"HOME")->data->content; //Should always work since
+    } else {
+        pathname = c[1];
     }
-
-    if (chdir(c[1]) != 0) {
+    if (chdir(pathname) != 0) {
         switch (errno) {
             case EACCES:
                 fprintf(stderr, "Search permission is denied for any component of the pathname\n");

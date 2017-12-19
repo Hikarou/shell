@@ -26,4 +26,6 @@ void display(node *nd);
 
 void display_tree(node *nd);
 
+void free_env_var(environment_var *toFree);
+
 #endif //SHELL_BINARY_TREE_H

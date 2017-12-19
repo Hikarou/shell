@@ -153,6 +153,7 @@ void dispose(node *root) {
     if (root != NULL) {
         dispose(root->left);
         dispose(root->right);
+        free_env_var(root->data);
         free(root);
     }
 }
@@ -179,4 +180,12 @@ void display_tree(node* nd)
 
     display_tree(nd->left);
     display_tree(nd->right);
+}
+
+void free_env_var(environment_var *toFree) {
+    if (toFree == NULL) return;
+
+    free(toFree->content);
+    free(toFree->var);
+    free(toFree);
 }

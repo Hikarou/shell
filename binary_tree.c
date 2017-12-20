@@ -5,8 +5,6 @@
 #include <stdio.h>
 
 node_t *create_node(environment_var *data) {
-    printf("create_node init\n");
-    fflush(stdout);
     node_t *new_node = (node_t *) malloc(sizeof(node_t));
 
     if (new_node == NULL) {
@@ -20,38 +18,24 @@ node_t *create_node(environment_var *data) {
         exit(1);
     }
 
-    printf("create_node after malloc\n");
-    printf("create_node before calloc of (%zu, %zu)\n", strlen(data->var), sizeof(char));
-    fflush(stdout);
     new_node->data->var = calloc(strlen(data->var), sizeof(char));
-    printf("create_node after first calloc\n");
-    fflush(stdout);
     if (new_node->data->var == NULL) {
         fprintf(stderr, "create_node malloc failed\n");
         exit(EXIT_FAILURE);
     }
     strncpy(new_node->data->var, data->var, strlen(data->var));
-    printf("create_node after first strncpy\n");
-    fflush(stdout);
     new_node->data->content = calloc(strlen(data->content), sizeof(char));
-    printf("create_node after second calloc\n");
-    fflush(stdout);
     if (new_node->data->content == NULL) {
         fprintf(stderr, "create_node malloc failed\n");
         exit(EXIT_FAILURE);
     }
     strncpy(new_node->data->content, data->content, strlen(data->content));
-    printf("create_node after second strncpy\n");
-    fflush(stdout);
     new_node->left = NULL;
     new_node->right = NULL;
     return new_node;
 }
 
 node_t **insert_node(node_t **root, environment_var *data) {
-
-    printf("insert_node init\n");
-    fflush(stdout);
     if (*root == NULL) {
         *root = create_node(data);
     } else {
@@ -161,7 +145,7 @@ void dispose(node_t *root) {
 void display(node_t* nd)
 {
     if(nd != NULL)
-        printf("%s=%s\n",nd->data->var, nd->data->content);
+        fprintf(stdout, "%s=%s\n",nd->data->var, nd->data->content);
 }
 
 void display_tree(node_t* nd)
@@ -170,13 +154,6 @@ void display_tree(node_t* nd)
         return;
     /* display node_t data */
     display(nd);
-    /*
-    if(nd->left != NULL)
-        printf("(L:%s)",nd->left->data->var);
-    if(nd->right != NULL)
-        printf("(R:%s)",nd->right->data->var);
-    printf("\n");
-     */
 
     display_tree(nd->left);
     display_tree(nd->right);

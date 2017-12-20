@@ -47,7 +47,9 @@ static void print_introduction();
 
 static environment_var *extract_environment_var(char *input);
 
-static char *change_alias(char **first);
+static char *change_alias(char *first);
+
+void replace_environment_vars(char *toReplace[], int size_parsed);
 
 typedef int (*shell_fct)(char **fct, int); ///fct contains function name and args
 
@@ -59,7 +61,7 @@ struct shell_map {
     const char *args;    /// arguments description
 };
 
-node *alias_root; ///Binary tree which will contain all the environment variables
+node_t *alias_root; ///Binary tree which will contain all the environment variables
 
 struct shell_map shell_cmds[NB_CMDS] = {
         {"help",  do_help,  "display this help.",                      0, NULL},
@@ -158,13 +160,13 @@ int main() {
                         }
                         free(var);
                     } else {
-                        // if alias created, need to change TODO
-                        char *replace = change_alias(&parsed[0]);
+                        char *replace = change_alias(parsed[0]);
 
+                        replace_environment_vars(parsed, size_parsed);
 
                         //finding the function asked
                         do {
-                            err = strcmp(parsed[0], shell_cmds[k].name);
+                            err = strcmp(replace, shell_cmds[k].name);
                             ++k;
                         } while (k < NB_CMDS && err != 0);
                         --k;
@@ -333,7 +335,6 @@ static int do_cd(char **c, int nb_args) {
     char *pathname;
     // Take car of the cd without argument (Goes to the HOME path)
     if (nb_args == 0) {
-        //pathname = search(env_var_root, "HOME")->data->content; //Should always work since TODO Ask Hoerdt
         pathname = getenv("HOME");
     } else if (nb_args > 1) {
         return ERR_ARGS;
@@ -386,15 +387,15 @@ static int do_alias(char **c, int nb_args) {
     for (int i = 0; i < nb_args; ++i) {
         environment_var *alias = extract_environment_var(c[1]);
         if (alias == NULL) { //alias called without '=' in arguments
-            node *nd = search(alias_root, c[1]);
+            node_t *nd = search(alias_root, c[1]);
             if (nd != NULL) {
                 display(nd);
             }
             free(alias);
         } else {
             //Create or update the new environment variable
-            insert_node(alias_root, alias);
-            free(alias);
+            insert_node(&alias_root, alias);
+            free_env_var(alias);
         }
     }
     return ERR_OK;
@@ -461,10 +462,10 @@ static environment_var *extract_environment_var(char *input) {
  * @param first the first occurence to change
  * @return the alias changed
  */
-static char *change_alias(char **first) { //TODO
-    char *current = *first;
+static char *change_alias(char *first) { //TODO if recursive
+    char *current = first;
     do {
-        node *nd = search(alias_root, current);
+        node_t *nd = search(alias_root, current);
         if (nd != NULL) {
             current = nd->data->content;
         } else {
@@ -472,4 +473,24 @@ static char *change_alias(char **first) { //TODO
         }
     } while (1);
     return current;
+}
+
+/**
+ * Replace the args by the values of the environment variables if needed
+ * @param toReplace The array to change
+ * @param size_parsed number of parsed arguments (including function)
+ */
+void replace_environment_vars(char *toReplace[], int size_parsed) {
+    for (int i = 0; i < size_parsed; ++i) {
+        if (strncmp(toReplace[i], "$", 1) == 0 && strlen(toReplace[i]) != 1) {
+            char *buf = malloc(strlen(toReplace[i]) - 1);
+            assert(buf);
+            strncpy(buf, toReplace[i]+1, strlen(toReplace[i])-1);
+            char *var = getenv(buf);
+            if (var != NULL) {
+                toReplace[i] = var;
+            }
+            free(buf);
+        }
+    }
 }

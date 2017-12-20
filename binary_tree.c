@@ -4,10 +4,10 @@
 #include <string.h>
 #include <stdio.h>
 
-node *create_node(environment_var *data) {
+node_t *create_node(environment_var *data) {
     printf("create_node init\n");
     fflush(stdout);
-    node *new_node = (node *) malloc(sizeof(node));
+    node_t *new_node = (node_t *) malloc(sizeof(node_t));
 
     if (new_node == NULL) {
         fprintf(stderr, "Out of memory!!! (create_node)\n");
@@ -48,18 +48,18 @@ node *create_node(environment_var *data) {
     return new_node;
 }
 
-node *insert_node(node *root, environment_var *data) {
+node_t **insert_node(node_t **root, environment_var *data) {
 
     printf("insert_node init\n");
     fflush(stdout);
-    if (root == NULL) {
-        root = create_node(data);
+    if (*root == NULL) {
+        *root = create_node(data);
     } else {
         int is_left = 0;
         int r = 0;
-        node *cursor = root;
-        node *prev = NULL;
-        node *new_node = create_node(data);
+        node_t *cursor = *root;
+        node_t *prev = cursor;
+        node_t *new_node = create_node(data);
 
         while (cursor != NULL) {
             r = strcmp(data->var, cursor->data->var);
@@ -70,7 +70,7 @@ node *insert_node(node *root, environment_var *data) {
             } else if (r > 0) {
                 is_left = 0;
                 cursor = cursor->right;
-            } else { //if the node exists, then we erase the old value
+            } else { //if the node_t exists, then we erase the old value
                 new_node->left = cursor->left;
                 new_node->right = cursor->right;
                 free(cursor);
@@ -88,11 +88,11 @@ node *insert_node(node *root, environment_var *data) {
     return root;
 }
 
-node *delete_node(node *root, environment_var *data) {
+node_t *delete_node(node_t *root, environment_var *data) {
     if (root == NULL)
         return NULL;
 
-    node *cursor;
+    node_t *cursor;
     int r = strcmp(data->var, root->data->var);
     if (r < 0)
         root->left = delete_node(root->left, data);
@@ -109,7 +109,7 @@ node *delete_node(node *root, environment_var *data) {
             root = cursor;
         } else {   //2 children
             cursor = root->right;
-            node *parent = NULL;
+            node_t *parent = NULL;
 
             while (cursor->left != NULL) {
                 parent = cursor;
@@ -126,12 +126,12 @@ node *delete_node(node *root, environment_var *data) {
     return root;
 }
 
-node *search(node *root, const char *var) {
+node_t *search(node_t *root, const char *var) {
     if (root == NULL)
         return NULL;
 
     int r;
-    node *cursor = root;
+    node_t *cursor = root;
     while (cursor != NULL) {
         r = strcmp(var, cursor->data->var);
         if (r < 0) {
@@ -149,7 +149,7 @@ node *search(node *root, const char *var) {
 /*
     recursively remove all nodes of the tree
 */
-void dispose(node *root) {
+void dispose(node_t *root) {
     if (root != NULL) {
         dispose(root->left);
         dispose(root->right);
@@ -158,17 +158,17 @@ void dispose(node *root) {
     }
 }
 
-void display(node* nd)
+void display(node_t* nd)
 {
     if(nd != NULL)
         printf("%s=%s\n",nd->data->var, nd->data->content);
 }
 
-void display_tree(node* nd)
+void display_tree(node_t* nd)
 {
     if (nd == NULL)
         return;
-    /* display node data */
+    /* display node_t data */
     display(nd);
     /*
     if(nd->left != NULL)

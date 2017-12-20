@@ -6,25 +6,25 @@ typedef struct environnement_var_st {
     char *content;
 } environment_var;
 
-typedef struct node {
+typedef struct node_st {
     environment_var *data;
-    struct node *left;
-    struct node *right;
-} node;
+    struct node_st *left;
+    struct node_st *right;
+} node_t;
 
-node *create_node(environment_var *data);
+node_t *create_node(environment_var *data);
 
-node *insert_node(node *root, environment_var *data);
+node_t **insert_node(node_t **root, environment_var *data);
 
-node *delete_node(node *root, environment_var *data);
+node_t *delete_node(node_t *root, environment_var *data);
 
-node *search(node *root, const char *data);
+node_t *search(node_t *root, const char *data);
 
-void dispose(node *root);
+void dispose(node_t *root);
 
-void display(node *nd);
+void display(node_t *nd);
 
-void display_tree(node *nd);
+void display_tree(node_t *nd);
 
 void free_env_var(environment_var *toFree);
 

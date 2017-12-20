@@ -47,6 +47,8 @@ static void print_introduction();
 
 static environment_var *extract_environment_var(char *input);
 
+static char *change_alias(char **first);
+
 typedef int (*shell_fct)(char **fct, int); ///fct contains function name and args
 
 struct shell_map {
@@ -57,32 +59,25 @@ struct shell_map {
     const char *args;    /// arguments description
 };
 
-//node *env_var_root; ///Binary tree which will contain all the environment variables TODO Ask Hoerdt
 node *alias_root; ///Binary tree which will contain all the environment variables
 
-struct shell_map shell_cmds[] = {
+struct shell_map shell_cmds[NB_CMDS] = {
         {"help",  do_help,  "display this help.",                      0, NULL},
         {"exit",  do_exit,  "exit shell.",                             0, NULL},
         {"quit",  do_exit,  "exit shell.",                             0, NULL},
         {"pwd",   do_pwd,   "print name of current/working directory", 0, NULL},
-        {"cd",    do_cd,    "change directory.",                       1, "<pathname>"},
+        {"cd",    do_cd,    "change directory.",                       1, "[<pathname>]"},
         {"alias", do_alias, "define or display aliases",               1, "[alias-name[=string]]"},
 };
 
 int main() {
-
-    printf("Init\n");
-    fflush(stdout);
     char input[MAX_READ + 1] = "";
     char **parsed = NULL;
     int err = 0;
     int size_parsed = 0;
     int k = 0;
     shell_fct function = NULL;
-    //env_var_root = NULL;
-
-    printf("before open profile file\n");
-    fflush(stdout);
+    alias_root = NULL;
 
     //reading the profile file
     FILE *fp;
@@ -92,22 +87,18 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-
-    printf("before init profile file\n");
-    fflush(stdout);
     char *buf = NULL;
     size_t size_buf = 0;
     ssize_t nread;
-    printf("before reading profile file\n");
-    fflush(stdout);
+    //Get all the entries
     while ((nread = getline(&buf, &size_buf, fp)) != -1) {
-        printf("Retrieved line of length %zu\n", nread);
-        fflush(stdout);
+        //Clean the line from \n if needed
+        size_t position_last_char = strlen(buf) - 1;
+        if (buf[position_last_char] == '\n') {
+            buf[position_last_char] = '\0';
+        }
         environment_var *tuple = extract_environment_var(buf);
-        printf("extract_environment_var done\n");
-        fflush(stdout);
         if (tuple != NULL) {
-            //env_var_root = insert_node(env_var_root, tuple); TODO Ask for environment var
             setenv(tuple->var, tuple->content, 1);
             printf("insert_node done\n");
             fflush(stdout);
@@ -115,26 +106,19 @@ int main() {
         free_env_var(tuple);
     }
 
-    free(buf);
     fclose(fp);
+    free(buf);
 
-
-    printf("before checking profile file\n");
-    fflush(stdout);
-    /* TODO
-    if (search(env_var_root, "PATH") == NULL || search(env_var_root, "HOME") == NULL) {
-        fprintf(stderr, "Profile file does not contain either PATH or HOME variable !\n");
-        exit(EXIT_FAILURE);
-    } //*/
+    //Least environment variables needed
     if (getenv("PATH") == NULL || getenv("HOME") == NULL) {
         fprintf(stderr, "Profile file does not contain either PATH or HOME variable !\n");
         exit(EXIT_FAILURE);
     }
 
-    print_introduction();
 
     //Reading the standard input
     while ((!feof(stdin) && !ferror(stdin)) && err != EXIT) {
+        print_introduction();
         size_parsed = 0;
         k = 0;
 
@@ -156,12 +140,8 @@ int main() {
                 //tokenize the line
                 err = tokenize_input(input, &parsed, &size_parsed);
                 if (err == ERR_OK) {
+                    // New environment variable
                     if (size_parsed == 1 && strchr(input, '=') != NULL) {
-                        /* TODO Ask Hoerdt if need to use set/getEnv
-                        //New environnment var
-                        environment_var *new = extract_environment_var(parsed[0]);
-                        insert_node(env_var_root, new);
-                        //*/
                         environment_var *new = extract_environment_var(parsed[0]);
                         setenv(new->var, new->content, 1); //1 for overwriting
                         free_env_var(new);
@@ -172,13 +152,15 @@ int main() {
                         strncpy(var, parsed[0] + 1, length_var);
                         char *content = getenv(var);
                         if (content != NULL) {
-                            printf("$%s=%s\n", var, content);
+                            fprintf(stdout, "$%s=%s\n", var, content);
                         } else {
-                            printf("\n");
+                            fprintf(stdout, "\n");
                         }
                         free(var);
                     } else {
-                        //Expand if needed
+                        // if alias created, need to change TODO
+                        char *replace = change_alias(&parsed[0]);
+
 
                         //finding the function asked
                         do {
@@ -211,7 +193,6 @@ int main() {
         }
         fflush(stderr);
         fflush(stdout);
-        print_introduction();
     }
     return EXIT_SUCCESS;
 }
@@ -226,23 +207,20 @@ int main() {
 static int tokenize_input(char *input, char ***parsed, int *size_parsed) {
     char *ptr = NULL;
     int size = NB_ARGS;
-
     int k = 1;
     int i = 0;
-    size_t l = strlen(input);
-
     *(size_parsed) = 0;
 
     if (input == NULL || parsed == NULL) {
         return ERR_ARGS;
     }
 
+    size_t l = strlen(input);
     if (l <= 0) {
         return ERR_ARGS;
     }
 
     ptr = input;
-
     do {
         if (k == 0) { //in the middle of a word
             if (input[i] == ' ') {// new word
@@ -258,7 +236,7 @@ static int tokenize_input(char *input, char ***parsed, int *size_parsed) {
                     *(size_parsed) = *(size_parsed) + 1;
                 }
             }
-        } else { //beginning of a line or after a space char
+        } else { // (k == 1) beginning of a line or after a space char
             if (input[i] == ' ') { //get rid of multiple spaces
                 k = 1;
             } else { //beginning of a new word
@@ -286,21 +264,39 @@ static int tokenize_input(char *input, char ***parsed, int *size_parsed) {
     return 0;
 }
 
+/**
+ * Exits the shell
+ * @param UNUSED_c
+ * @param UNUSED_nb_args
+ * @return EXIT : The value to exit the shell
+ */
 static int do_exit(char **UNUSED(c), int UNUSED(nb_args)) {
     return EXIT;
 }
 
+/**
+ * Prints the help for all the commands possible and their arguments
+ * @param UNUSED_c
+ * @param UNUSED_nb_args
+ * @return ERR_OK : The value to continue the shell
+ */
 static int do_help(char **UNUSED(c), int UNUSED(nb_args)) {
     for (int i = 0; i < NB_CMDS; ++i) {
-        printf("- %s", shell_cmds[i].name);
+        fprintf(stdout, "- %s", shell_cmds[i].name);
         if (shell_cmds[i].argc > 0) {
-            printf(" %s", shell_cmds[i].args);
+            fprintf(stdout, " %s", shell_cmds[i].args);
         }
-        printf(": %s\n", shell_cmds[i].help);
+        fprintf(stdout, ": %s\n", shell_cmds[i].help);
     }
     return ERR_OK;
 }
 
+/**
+ * Prints the current working directory
+ * @param UNUSED_c
+ * @param UNUSED_nb_args
+ * @return ERR_OK : The value to continue the shell
+ */
 static int do_pwd(char **UNUSED(c), int UNUSED(nb_args)) {
     unsigned int size = 128;
     char *buf = NULL;
@@ -327,15 +323,25 @@ static int do_pwd(char **UNUSED(c), int UNUSED(nb_args)) {
     return ERR_OK;
 }
 
+/**
+ * Change the working directory
+ * @param c The line tokenize (cd [<pathname>])
+ * @param nb_args Nb of args given
+ * @return ERR_OK if it went ok, ERR_ARGS otherwise
+ */
 static int do_cd(char **c, int nb_args) {
     char *pathname;
     // Take car of the cd without argument (Goes to the HOME path)
     if (nb_args == 0) {
         //pathname = search(env_var_root, "HOME")->data->content; //Should always work since TODO Ask Hoerdt
         pathname = getenv("HOME");
+    } else if (nb_args > 1) {
+        return ERR_ARGS;
     } else {
         pathname = c[1];
     }
+
+    // Verbose on error with chdir
     if (chdir(pathname) != 0) {
         switch (errno) {
             case EACCES:
@@ -358,11 +364,17 @@ static int do_cd(char **c, int nb_args) {
                 fprintf(stderr, "Something went wrong with cd\n");
                 break;
         }
-        return -1;
+        return ERR_ARGS;
     }
     return ERR_OK;
 }
 
+/**
+ * define or display aliases
+ * @param c The line tokenize (alias [<pathname>])
+ * @param nb_args number of arguments given
+ * @return ERR_OK
+ */
 static int do_alias(char **c, int nb_args) {
     //Alias called without argument
     if (nb_args == 0) {
@@ -370,21 +382,27 @@ static int do_alias(char **c, int nb_args) {
         return ERR_OK;
     }
 
-    environment_var *alias = extract_environment_var(c[1]);
-    if (alias == NULL) { //alias called without '=' in arguments
-        node *nd = search(alias_root, c[1]);
-        if (nd != NULL) {
-            display(nd);
+    //If multiple aliases, take care of all of them
+    for (int i = 0; i < nb_args; ++i) {
+        environment_var *alias = extract_environment_var(c[1]);
+        if (alias == NULL) { //alias called without '=' in arguments
+            node *nd = search(alias_root, c[1]);
+            if (nd != NULL) {
+                display(nd);
+            }
+            free(alias);
+        } else {
+            //Create or update the new environment variable
+            insert_node(alias_root, alias);
+            free(alias);
         }
-        free(alias);
-        return ERR_OK;
     }
-    //Create or update the new environment variable
-    insert_node(alias_root, alias);
-    free(alias);
     return ERR_OK;
 }
 
+/**
+ * prints the introduction of the shell
+ */
 static void print_introduction() {
     time_t rawtime;
     struct tm *timeinfo;
@@ -395,42 +413,63 @@ static void print_introduction() {
     char *buf = asctime(timeinfo);
     char *bufBis = calloc(strlen(buf), sizeof(char));
     strncpy(bufBis, buf, strlen(buf) - 1);
-    fprintf(stdout, "%s | Interprete ! >", bufBis);
+    fprintf(stdout, "%s | Interpreter! >", bufBis);
     free(bufBis);
 }
 
+/**
+ * Extracts from the input the variable and the content from a line
+ * @param input The line to extract from
+ * @return the splitted line
+ */
 static environment_var *extract_environment_var(char *input) {
-    printf("extract_environment init\n");
-    fflush(stdout);
+    //Find the '=' char
     char *middle = strchr(input, '=');
     if (middle == NULL) {
         return NULL;
     }
-    printf("extract_environment found middle\n");
-    fflush(stdout);
 
     unsigned long var_length = middle - input;
     unsigned long content_length = strlen(input) - var_length + 1;
     environment_var *tuple = malloc(sizeof(environment_var));
     assert(tuple);
     tuple->var = calloc(var_length + 1, sizeof(char));//+1 for null terminating string
-    tuple->content = calloc(content_length + 1, sizeof(char));
-
-    if (tuple->var == NULL || tuple->content == NULL) {
+    if (tuple->var == NULL) {
+        free(tuple);
         fprintf(stderr, "Calloc failed in environment_var function\n");
         exit(EXIT_FAILURE);
     }
-    printf("extract_environment sizes found : %zu, %zu\n", var_length, content_length);
-    fflush(stdout);
+
+    tuple->content = calloc(content_length + 1, sizeof(char));
+    if (tuple->content == NULL) {
+        free(tuple->var);
+        free(tuple);
+        fprintf(stderr, "Calloc failed in environment_var function\n");
+        exit(EXIT_FAILURE);
+    }
 
     tuple->var = strncpy(tuple->var, input, var_length);
     assert(tuple->var);
-    printf("extract_environment first strncpy\n");
-    fflush(stdout);
     tuple->content = strncpy(tuple->content, middle + 1, content_length - 1); //+1 to get rid of the =
     assert(tuple->content);
-    printf("extract_environment second strncpy\n");
-    fflush(stdout);
 
     return tuple;
+}
+
+/**
+ * Change the alias if needed
+ * @param first the first occurence to change
+ * @return the alias changed
+ */
+static char *change_alias(char **first) { //TODO
+    char *current = *first;
+    do {
+        node *nd = search(alias_root, current);
+        if (nd != NULL) {
+            current = nd->data->content;
+        } else {
+            break;
+        }
+    } while (1);
+    return current;
 }

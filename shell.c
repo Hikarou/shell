@@ -102,8 +102,6 @@ int main() {
         environment_var *tuple = extract_environment_var(buf);
         if (tuple != NULL) {
             setenv(tuple->var, tuple->content, 1);
-            printf("insert_node done\n");
-            fflush(stdout);
         }
         free_env_var(tuple);
     }
@@ -178,11 +176,11 @@ int main() {
                                     perror("Function returned an error\n");
                                 }
                             } else {
-                                printf("ERROR SHELL: wrong number of arguements\n");
+                                perror("ERROR SHELL: wrong number of arguements\n");
                                 err = ERR_ARGS;
                             }
                         } else { //Command does not exist or not implemented
-                            printf("ERROR SHELL: Invalid command\n");
+                            perror("ERROR SHELL: Invalid command\n");
                             err = ERR_ARGS;
                         }
                     }
@@ -387,11 +385,11 @@ static int do_alias(char **c, int nb_args) {
     for (int i = 0; i < nb_args; ++i) {
         environment_var *alias = extract_environment_var(c[1]);
         if (alias == NULL) { //alias called without '=' in arguments
+            free(alias);
             node_t *nd = search(alias_root, c[1]);
             if (nd != NULL) {
                 display(nd);
             }
-            free(alias);
         } else {
             //Create or update the new environment variable
             insert_node(&alias_root, alias);
@@ -462,12 +460,24 @@ static environment_var *extract_environment_var(char *input) {
  * @param first the first occurence to change
  * @return the alias changed
  */
-static char *change_alias(char *first) { //TODO if recursive
+static char *change_alias(char *first) {
     char *current = first;
+    // To keep track with all the aliases already changed to stop recursive aliases
+    environment_var alias = {first, ""};
+    node_t *first_change = NULL;
+    insert_node(&first_change, &alias);
+
     do {
         node_t *nd = search(alias_root, current);
         if (nd != NULL) {
             current = nd->data->content;
+            node_t * found = search(first_change,current);
+            if (found == NULL) {
+                insert_node(&first_change,nd->data);
+            } else {
+                fprintf(stdout, "A recursive alias was found, the last occurence will be put\n");
+                break;
+            }
         } else {
             break;
         }

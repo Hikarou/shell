@@ -47,26 +47,29 @@ node_t **insert_node(node_t **root, environment_var *data) {
 
         while (cursor != NULL) {
             r = strcmp(data->var, cursor->data->var);
-            prev = cursor;
             if (r < 0) {
                 is_left = 1;
+                prev = cursor;
                 cursor = cursor->left;
             } else if (r > 0) {
                 is_left = 0;
+                prev = cursor;
                 cursor = cursor->right;
             } else { //if the node_t exists, then we erase the old value
                 new_node->left = cursor->left;
                 new_node->right = cursor->right;
+                free_env_var(cursor->data);
                 free(cursor);
                 break;
             }
         }
-        if (is_left) {
+        if (prev == cursor) { //If the root is to be changed
+            *root = new_node;
+        } else if (is_left) {
             prev->left = new_node;
-        } else {
+        } else { //is right
             prev->right = new_node;
         }
-
     }
 
     return root;
@@ -142,14 +145,12 @@ void dispose(node_t *root) {
     }
 }
 
-void display(node_t* nd)
-{
-    if(nd != NULL)
-        fprintf(stdout, "%s=%s\n",nd->data->var, nd->data->content);
+void display(node_t *nd) {
+    if (nd != NULL)
+        fprintf(stdout, "%s=%s\n", nd->data->var, nd->data->content);
 }
 
-void display_tree(node_t* nd)
-{
+void display_tree(node_t *nd) {
     if (nd == NULL)
         return;
     /* display node_t data */

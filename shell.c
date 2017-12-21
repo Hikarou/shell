@@ -30,25 +30,79 @@
 #define NOT_IMPLEMENTED 5
 #define NB_ARGS 1
 
-//Static declarations
+/**
+ * Exits the shell
+ * @param UNUSED_c
+ * @param UNUSED_nb_args
+ * @return EXIT : The value to exit the shell
+ */
 static int do_exit(char **, int);
 
+/**
+ * Prints the help for all the commands possible and their arguments
+ * @param UNUSED_c
+ * @param UNUSED_nb_args
+ * @return ERR_OK : The value to continue the shell
+ */
 static int do_help(char **, int);
 
+/**
+ * Prints the current working directory
+ * @param UNUSED_c
+ * @param UNUSED_nb_args
+ * @return ERR_OK : The value to continue the shell
+ */
 static int do_pwd(char **, int);
 
+/**
+ * Change the working directory
+ * @param c The line tokenize (cd [<pathname>])
+ * @param nb_args Nb of args given
+ * @return ERR_OK if it went ok, ERR_ARGS otherwise
+ */
 static int do_cd(char **c, int);
 
+/**
+ * define or display aliases
+ * @param c The line tokenize (alias [<pathname>])
+ * @param nb_args number of arguments given
+ * @return ERR_OK
+ */
 static int do_alias(char **c, int);
 
+/**
+ * @brief tokenize the input given
+ * @param input the input to tonkenize (IN)
+ * @param parsed the input tokenized (OUT)
+ * @param size_parsed the length of parsed
+ * @return 0 on success; >0 on error
+ */
 static int tokenize_input(char *input, char ***parsed, int *size_parsed);
 
+/**
+ * prints the introduction of the shell
+ */
 static void print_introduction();
 
+/**
+ * Extracts from the input the variable and the content from a line
+ * @param input The line to extract from
+ * @return the splitted line
+ */
 static environment_var *extract_environment_var(char *input);
 
+/**
+ * Change the alias if needed
+ * @param first the first occurence to change
+ * @return the alias changed
+ */
 static char *change_alias(char *first);
 
+/**
+ * Replace the args by the values of the environment variables if needed
+ * @param toReplace The array to change
+ * @param size_parsed number of parsed arguments (including function)
+ */
 void replace_environment_vars(char *toReplace[], int size_parsed);
 
 typedef int (*shell_fct)(char **fct, int); ///fct contains function name and args
@@ -63,7 +117,7 @@ struct shell_map {
 
 node_t *alias_root; ///Binary tree which will contain all the environment variables
 
-struct shell_map shell_cmds[NB_CMDS] = {
+struct shell_map shell_cmds[NB_CMDS] = { /// A simple mapping that maps the commands with their functions
         {"help",  do_help,  "display this help.",                      0, NULL},
         {"exit",  do_exit,  "exit shell.",                             0, NULL},
         {"quit",  do_exit,  "exit shell.",                             0, NULL},
@@ -91,9 +145,8 @@ int main() {
 
     char *buf = NULL;
     size_t size_buf = 0;
-    ssize_t nread;
     //Get all the entries
-    while ((nread = getline(&buf, &size_buf, fp)) != -1) {
+    while (getline(&buf, &size_buf, fp) != -1) {
         //Clean the line from \n if needed
         size_t position_last_char = strlen(buf) - 1;
         if (buf[position_last_char] == '\n') {
@@ -105,16 +158,14 @@ int main() {
         }
         free_env_var(tuple);
     }
-
     fclose(fp);
-    free(buf);
+    if (buf != NULL) free(buf);
 
     //Least environment variables needed
     if (getenv("PATH") == NULL || getenv("HOME") == NULL) {
         fprintf(stderr, "Profile file does not contain either PATH or HOME variable !\n");
         exit(EXIT_FAILURE);
     }
-
 
     //Reading the standard input
     while ((!feof(stdin) && !ferror(stdin)) && err != EXIT) {
@@ -157,7 +208,7 @@ int main() {
                             fprintf(stdout, "\n");
                         }
                         free(var);
-                    } else {
+                    } else { //Execution of command
                         char *replace = change_alias(parsed[0]);
 
                         replace_environment_vars(parsed, size_parsed);
@@ -168,7 +219,7 @@ int main() {
                             ++k;
                         } while (k < NB_CMDS && err != 0);
                         --k;
-                        if (err == 0) {
+                        if (err == 0) { //function found
                             function = shell_cmds[k].fct;
                             if ((shell_cmds[k]).argc >= (size_t) size_parsed - 1) { //Does it have the right arguments ?
                                 err = function(parsed, size_parsed - 1);
@@ -197,13 +248,6 @@ int main() {
     return EXIT_SUCCESS;
 }
 
-/**
- * @brief tokenize the input given
- * @param input the input to tonkenize (IN)
- * @param parsed the input tokenized (OUT)
- * @param size_parsed the length of parsed
- * @return 0 on success; >0 on error
- */
 static int tokenize_input(char *input, char ***parsed, int *size_parsed) {
     char *ptr = NULL;
     int size = NB_ARGS;
@@ -211,14 +255,10 @@ static int tokenize_input(char *input, char ***parsed, int *size_parsed) {
     int i = 0;
     *(size_parsed) = 0;
 
-    if (input == NULL || parsed == NULL) {
-        return ERR_ARGS;
-    }
+    if (input == NULL || parsed == NULL) return ERR_ARGS;
 
     size_t l = strlen(input);
-    if (l <= 0) {
-        return ERR_ARGS;
-    }
+    if (l <= 0) return ERR_ARGS;
 
     ptr = input;
     do {
@@ -264,22 +304,10 @@ static int tokenize_input(char *input, char ***parsed, int *size_parsed) {
     return 0;
 }
 
-/**
- * Exits the shell
- * @param UNUSED_c
- * @param UNUSED_nb_args
- * @return EXIT : The value to exit the shell
- */
 static int do_exit(char **UNUSED(c), int UNUSED(nb_args)) {
     return EXIT;
 }
 
-/**
- * Prints the help for all the commands possible and their arguments
- * @param UNUSED_c
- * @param UNUSED_nb_args
- * @return ERR_OK : The value to continue the shell
- */
 static int do_help(char **UNUSED(c), int UNUSED(nb_args)) {
     for (int i = 0; i < NB_CMDS; ++i) {
         fprintf(stdout, "- %s", shell_cmds[i].name);
@@ -291,15 +319,10 @@ static int do_help(char **UNUSED(c), int UNUSED(nb_args)) {
     return ERR_OK;
 }
 
-/**
- * Prints the current working directory
- * @param UNUSED_c
- * @param UNUSED_nb_args
- * @return ERR_OK : The value to continue the shell
- */
 static int do_pwd(char **UNUSED(c), int UNUSED(nb_args)) {
     unsigned int size = 128;
     char *buf = NULL;
+
     do {
         size *= 2;
         buf = realloc(buf, size * sizeof(char));
@@ -323,12 +346,6 @@ static int do_pwd(char **UNUSED(c), int UNUSED(nb_args)) {
     return ERR_OK;
 }
 
-/**
- * Change the working directory
- * @param c The line tokenize (cd [<pathname>])
- * @param nb_args Nb of args given
- * @return ERR_OK if it went ok, ERR_ARGS otherwise
- */
 static int do_cd(char **c, int nb_args) {
     char *pathname;
     // Take car of the cd without argument (Goes to the HOME path)
@@ -368,12 +385,6 @@ static int do_cd(char **c, int nb_args) {
     return ERR_OK;
 }
 
-/**
- * define or display aliases
- * @param c The line tokenize (alias [<pathname>])
- * @param nb_args number of arguments given
- * @return ERR_OK
- */
 static int do_alias(char **c, int nb_args) {
     //Alias called without argument
     if (nb_args == 0) {
@@ -399,9 +410,6 @@ static int do_alias(char **c, int nb_args) {
     return ERR_OK;
 }
 
-/**
- * prints the introduction of the shell
- */
 static void print_introduction() {
     time_t rawtime;
     struct tm *timeinfo;
@@ -409,29 +417,24 @@ static void print_introduction() {
     time(&rawtime);
 
     timeinfo = localtime(&rawtime);
-    char *buf = asctime(timeinfo);
-    char *bufBis = calloc(strlen(buf), sizeof(char));
-    strncpy(bufBis, buf, strlen(buf) - 1);
-    fprintf(stdout, "%s | Interpreter! >", bufBis);
-    free(bufBis);
+    char *full_time = asctime(timeinfo);
+    //getting rid of the final '\n'
+    char *cleaned_time = calloc(strlen(full_time), sizeof(char));
+    strncpy(cleaned_time, full_time, strlen(full_time) - 1);
+    fprintf(stdout, "%s | Interpreter! >", cleaned_time);
+    free(cleaned_time);
 }
 
-/**
- * Extracts from the input the variable and the content from a line
- * @param input The line to extract from
- * @return the splitted line
- */
 static environment_var *extract_environment_var(char *input) {
     //Find the '=' char
     char *middle = strchr(input, '=');
-    if (middle == NULL) {
-        return NULL;
-    }
+    if (middle == NULL) return NULL;
 
     unsigned long var_length = middle - input;
     unsigned long content_length = strlen(input) - var_length + 1;
     environment_var *tuple = malloc(sizeof(environment_var));
     assert(tuple);
+
     tuple->var = calloc(var_length + 1, sizeof(char));//+1 for null terminating string
     if (tuple->var == NULL) {
         free(tuple);
@@ -447,6 +450,7 @@ static environment_var *extract_environment_var(char *input) {
         exit(EXIT_FAILURE);
     }
 
+    //Fill the tuple
     tuple->var = strncpy(tuple->var, input, var_length);
     assert(tuple->var);
     tuple->content = strncpy(tuple->content, middle + 1, content_length - 1); //+1 to get rid of the =
@@ -455,18 +459,13 @@ static environment_var *extract_environment_var(char *input) {
     return tuple;
 }
 
-/**
- * Change the alias if needed
- * @param first the first occurence to change
- * @return the alias changed
- */
 static char *change_alias(char *first) {
     char *current = first;
-    // To keep track with all the aliases already changed to stop recursive aliases
-    environment_var alias = {first, ""};
+    environment_var alias = {first, ""}; // To keep track with all the aliases already changed to stop recursive aliases
     node_t *first_change = NULL;
     insert_node(&first_change, &alias);
 
+    //Recursively change all the aliases if needed
     do {
         node_t *nd = search(alias_root, current);
         if (nd != NULL) {
@@ -486,11 +485,6 @@ static char *change_alias(char *first) {
     return current;
 }
 
-/**
- * Replace the args by the values of the environment variables if needed
- * @param toReplace The array to change
- * @param size_parsed number of parsed arguments (including function)
- */
 void replace_environment_vars(char *toReplace[], int size_parsed) {
     for (int i = 0; i < size_parsed; ++i) {
         if (strncmp(toReplace[i], "$", 1) == 0 && strlen(toReplace[i]) != 1) {

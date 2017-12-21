@@ -89,7 +89,7 @@ static void print_introduction();
  * @param input The line to extract from
  * @return the splitted line
  */
-static environment_var *extract_environment_var(char *input);
+static alias_t *extract_environment_var(char *input);
 
 /**
  * Change the alias if needed
@@ -152,7 +152,7 @@ int main() {
         if (buf[position_last_char] == '\n') {
             buf[position_last_char] = '\0';
         }
-        environment_var *tuple = extract_environment_var(buf);
+        alias_t *tuple = extract_environment_var(buf);
         if (tuple != NULL) {
             setenv(tuple->var, tuple->content, 1);
         }
@@ -193,7 +193,7 @@ int main() {
                 if (err == ERR_OK) {
                     // New environment variable
                     if (size_parsed == 1 && strchr(input, '=') != NULL) {
-                        environment_var *new = extract_environment_var(parsed[0]);
+                        alias_t *new = extract_environment_var(parsed[0]);
                         setenv(new->var, new->content, 1); //1 for overwriting
                         free_env_var(new);
                     } else if (size_parsed == 1 && parsed[0][0] == '$') { //Printing the envrionment asked
@@ -320,7 +320,7 @@ static int do_help(char **UNUSED(c), int UNUSED(nb_args)) {
 }
 
 static int do_pwd(char **UNUSED(c), int UNUSED(nb_args)) {
-    unsigned int size = 128;
+    unsigned int size = 32;
     char *buf = NULL;
 
     do {
@@ -394,7 +394,7 @@ static int do_alias(char **c, int nb_args) {
 
     //If multiple aliases, take care of all of them
     for (int i = 0; i < nb_args; ++i) {
-        environment_var *alias = extract_environment_var(c[1]);
+        alias_t *alias = extract_environment_var(c[1]);
         if (alias == NULL) { //alias called without '=' in arguments
             free(alias);
             node_t *nd = search(alias_root, c[1]);
@@ -425,20 +425,20 @@ static void print_introduction() {
     free(cleaned_time);
 }
 
-static environment_var *extract_environment_var(char *input) {
+static alias_t *extract_environment_var(char *input) {
     //Find the '=' char
     char *middle = strchr(input, '=');
     if (middle == NULL) return NULL;
 
     unsigned long var_length = middle - input;
     unsigned long content_length = strlen(input) - var_length + 1;
-    environment_var *tuple = malloc(sizeof(environment_var));
+    alias_t *tuple = malloc(sizeof(alias_t));
     assert(tuple);
 
     tuple->var = calloc(var_length + 1, sizeof(char));//+1 for null terminating string
     if (tuple->var == NULL) {
         free(tuple);
-        fprintf(stderr, "Calloc failed in environment_var function\n");
+        fprintf(stderr, "Calloc failed in alias_t function\n");
         exit(EXIT_FAILURE);
     }
 
@@ -446,7 +446,7 @@ static environment_var *extract_environment_var(char *input) {
     if (tuple->content == NULL) {
         free(tuple->var);
         free(tuple);
-        fprintf(stderr, "Calloc failed in environment_var function\n");
+        fprintf(stderr, "Calloc failed in alias_t function\n");
         exit(EXIT_FAILURE);
     }
 
@@ -461,7 +461,7 @@ static environment_var *extract_environment_var(char *input) {
 
 static char *change_alias(char *first) {
     char *current = first;
-    environment_var alias = {first, ""}; // To keep track with all the aliases already changed to stop recursive aliases
+    alias_t alias = {first, ""}; // To keep track with all the aliases already changed to stop recursive aliases
     node_t *first_change = NULL;
     insert_node(&first_change, &alias);
 

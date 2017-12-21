@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 
-node_t *create_node(environment_var *data) {
+node_t *create_node(alias_t *data) {
     node_t *new_node = (node_t *) malloc(sizeof(node_t));
 
     if (new_node == NULL) {
@@ -23,7 +23,7 @@ node_t *create_node(environment_var *data) {
         exit(1);
     }
 
-    new_node->data = malloc(sizeof(environment_var));
+    new_node->data = malloc(sizeof(alias_t));
     if (new_node->data == NULL) {
         fprintf(stderr, "Out of memory!!! (create_node)\n");
         exit(1);
@@ -47,7 +47,7 @@ node_t *create_node(environment_var *data) {
     return new_node;
 }
 
-node_t **insert_node(node_t **root, environment_var *data) {
+node_t **insert_node(node_t **root, alias_t *data) {
     if (*root == NULL) { //New binary tree
         *root = create_node(data);
     } else {
@@ -88,7 +88,7 @@ node_t **insert_node(node_t **root, environment_var *data) {
     return root;
 }
 
-node_t *delete_node(node_t *root, environment_var *data) {
+node_t *delete_node(node_t *root, alias_t *data) {
     if (root == NULL) return NULL;
 
     // Explication for this : [1] p.297
@@ -167,7 +167,7 @@ void display_tree(node_t *nd) {
     display_tree(nd->right);
 }
 
-void free_env_var(environment_var *toFree) {
+void free_env_var(alias_t *toFree) {
     if (toFree == NULL) return;
 
     free(toFree->content);

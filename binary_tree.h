@@ -12,13 +12,13 @@
 #ifndef SHELL_BINARY_TREE_H
 #define SHELL_BINARY_TREE_H
 
-typedef struct environnement_var_st {
+typedef struct alias_st {
     char *var;
     char *content;
-} environment_var;
+} alias_t;
 
 typedef struct node_st { /// Binary tree
-    environment_var *data;
+    alias_t *data;
     struct node_st *left;
     struct node_st *right;
 } node_t;
@@ -28,7 +28,7 @@ typedef struct node_st { /// Binary tree
  * @param data The data to keep in the node
  * @return the node
  */
-node_t *create_node(environment_var *data);
+node_t *create_node(alias_t *data);
 
 /**
  * Inserts a node in a Binary tree
@@ -36,7 +36,7 @@ node_t *create_node(environment_var *data);
  * @param data The data to keep in the tree
  * @return a pointer to the filled tree
  */
-node_t **insert_node(node_t **root, environment_var *data);
+node_t **insert_node(node_t **root, alias_t *data);
 
 /**
  * Deletes the binary tree from the node where the var equals to the given data
@@ -44,7 +44,7 @@ node_t **insert_node(node_t **root, environment_var *data);
  * @param data The data to find
  * @return A pointer to the emptied tree
  */
-node_t *delete_node(node_t *root, environment_var *data);
+node_t *delete_node(node_t *root, alias_t *data);
 
 /**
  * Searches the node in the binary tree where lies the same data
@@ -76,6 +76,6 @@ void display_tree(node_t *nd);
  * Frees the environment variable structure
  * @param toFree A pointer to the structure to be freed
  */
-void free_env_var(environment_var *toFree);
+void free_env_var(alias_t *toFree);
 
 #endif //SHELL_BINARY_TREE_H

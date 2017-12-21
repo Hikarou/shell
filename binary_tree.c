@@ -1,3 +1,14 @@
+/**
+ * Binary tree done with the help of
+ * "Introduction of Algorithms, Third Edition,
+ * Thomas H. Cormen,
+ * Charles E. Leiserson,
+ * Ronald L. Rivest,
+ * Clifford Stein,
+ * 2009" [1]
+ * pages 286-298
+ */
+
 #include "binary_tree.h"
 #include <stddef.h>
 #include <stdlib.h>
@@ -29,6 +40,7 @@ node_t *create_node(environment_var *data) {
         fprintf(stderr, "create_node malloc failed\n");
         exit(EXIT_FAILURE);
     }
+
     strncpy(new_node->data->content, data->content, strlen(data->content));
     new_node->left = NULL;
     new_node->right = NULL;
@@ -36,11 +48,11 @@ node_t *create_node(environment_var *data) {
 }
 
 node_t **insert_node(node_t **root, environment_var *data) {
-    if (*root == NULL) {
+    if (*root == NULL) { //New binary tree
         *root = create_node(data);
     } else {
-        int is_left = 0;
-        int r = 0;
+        int is_left = 0; //Keep track if the new node will be a (1) left node or a (0) right node
+        int r = 0; //Comparator
         node_t *cursor = *root;
         node_t *prev = cursor;
         node_t *new_node = create_node(data);
@@ -63,6 +75,7 @@ node_t **insert_node(node_t **root, environment_var *data) {
                 break;
             }
         }
+
         if (prev == cursor) { //If the root is to be changed
             *root = new_node;
         } else if (is_left) {
@@ -76,16 +89,16 @@ node_t **insert_node(node_t **root, environment_var *data) {
 }
 
 node_t *delete_node(node_t *root, environment_var *data) {
-    if (root == NULL)
-        return NULL;
+    if (root == NULL) return NULL;
 
+    // Explication for this : [1] p.297
     node_t *cursor;
     int r = strcmp(data->var, root->data->var);
-    if (r < 0)
+    if (r < 0) {
         root->left = delete_node(root->left, data);
-    else if (r > 0)
+    } else if (r > 0) {
         root->right = delete_node(root->right, data);
-    else {
+    } else {
         if (root->left == NULL) {
             cursor = root->right;
             free(root);
@@ -114,9 +127,6 @@ node_t *delete_node(node_t *root, environment_var *data) {
 }
 
 node_t *search(node_t *root, const char *var) {
-    if (root == NULL)
-        return NULL;
-
     int r;
     node_t *cursor = root;
     while (cursor != NULL) {
@@ -125,7 +135,7 @@ node_t *search(node_t *root, const char *var) {
             cursor = cursor->left;
         } else if (r > 0) {
             cursor = cursor->right;
-        } else {
+        } else { // Found
             break;
         }
     }
@@ -133,9 +143,6 @@ node_t *search(node_t *root, const char *var) {
 
 }
 
-/*
-    recursively remove all nodes of the tree
-*/
 void dispose(node_t *root) {
     if (root != NULL) {
         dispose(root->left);
@@ -153,10 +160,10 @@ void display(node_t *nd) {
 void display_tree(node_t *nd) {
     if (nd == NULL)
         return;
-    /* display node_t data */
-    display(nd);
 
+    //In order print [1] p.288
     display_tree(nd->left);
+    display(nd);
     display_tree(nd->right);
 }
 

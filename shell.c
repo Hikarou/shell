@@ -252,7 +252,7 @@ static int tokenize_input(char *input, char ***parsed, int *size_parsed) {
     char *ptr = NULL;
     int size = NB_ARGS;
     int k = 1;
-    int i = 0;
+    size_t i = 0;
     *(size_parsed) = 0;
 
     if (input == NULL || parsed == NULL) return ERR_ARGS;

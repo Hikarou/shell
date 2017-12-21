@@ -471,17 +471,18 @@ static char *change_alias(char *first) {
         node_t *nd = search(alias_root, current);
         if (nd != NULL) {
             current = nd->data->content;
-            node_t * found = search(first_change,current);
+            node_t *found = search(first_change, current);
             if (found == NULL) {
-                insert_node(&first_change,nd->data);
+                insert_node(&first_change, nd->data);
             } else {
-                fprintf(stdout, "A recursive alias was found, the last occurence will be put\n");
+                fprintf(stderr, "A recursive alias was found, the last occurence will be put\n");
                 break;
             }
         } else {
             break;
         }
     } while (1);
+    dispose(first_change);
     return current;
 }
 
@@ -495,7 +496,7 @@ void replace_environment_vars(char *toReplace[], int size_parsed) {
         if (strncmp(toReplace[i], "$", 1) == 0 && strlen(toReplace[i]) != 1) {
             char *buf = malloc(strlen(toReplace[i]) - 1);
             assert(buf);
-            strncpy(buf, toReplace[i]+1, strlen(toReplace[i])-1);
+            strncpy(buf, toReplace[i] + 1, strlen(toReplace[i]) - 1);
             char *var = getenv(buf);
             if (var != NULL) {
                 toReplace[i] = var;

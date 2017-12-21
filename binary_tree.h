@@ -67,7 +67,7 @@ void dispose(node_t *root);
 void display(node_t *nd);
 
 /**
- * Displays the binary tree first depth from left to right
+ * Displays the binary tree in key order
  * @param nd The root of the tree to print
  */
 void display_tree(node_t *nd);

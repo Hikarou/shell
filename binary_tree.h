@@ -1,3 +1,14 @@
+/**
+ * Binary tree done with the help of
+ * "Introduction of Algorithms, Third Edition,
+ * Thomas H. Cormen,
+ * Charles E. Leiserson,
+ * Ronald L. Rivest,
+ * Clifford Stein,
+ * 2009" [1]
+ * pages 286-298
+ */
+
 #ifndef SHELL_BINARY_TREE_H
 #define SHELL_BINARY_TREE_H
 

@@ -20,6 +20,7 @@
 #include <time.h>
 #include <errno.h>
 #include <assert.h>
+#include <sys/wait.h>
 #include "binary_tree.h"
 
 #define MAX_READ 255
@@ -208,7 +209,7 @@ int main() {
                             fprintf(stdout, "\n");
                         }
                         free(var);
-                    } else { //Execution of command
+                    } else { //Execution of an internal command
                         char *replace = change_alias(parsed[0]);
 
                         replace_environment_vars(parsed, size_parsed);
@@ -227,12 +228,25 @@ int main() {
                                     perror("Function returned an error\n");
                                 }
                             } else {
-                                perror("ERROR SHELL: wrong number of arguements\n");
+                                fprintf(stderr, "ERROR SHELL: wrong number of arguements\n");
                                 err = ERR_ARGS;
                             }
-                        } else { //Command does not exist or not implemented
-                            perror("ERROR SHELL: Invalid command\n");
-                            err = ERR_ARGS;
+                        } else { //Command does not exist in intern => execve !
+                            char *argv[size_parsed + 1]; // NULL terminated array
+                            for (int i = 0; i < size_parsed; ++i) {
+                                argv[i] = parsed[i];
+                            }
+                            //Taking care of the NULL terminating
+                            argv[size_parsed] = NULL;
+                            int child_pid = fork();
+                            if (child_pid < 0){
+                                fprintf(stderr, "ERROR SHELL: Could not fork before executing command\n");
+                            } else if (child_pid == 0){ // child process
+                                execve(argv[0], &argv[0], (char *const *) 0);
+                            } else { // Parent process
+                                int status;
+                                wait(&status);
+                            }
                         }
                     }
                 }

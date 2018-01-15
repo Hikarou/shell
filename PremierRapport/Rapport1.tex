@@ -16,34 +16,34 @@
 Le but de ce document est de décrire l'état actuel de l'implémentation.
 
 \section{Le pré-bash}
-Avant de lancer l'interpréteur de bash, une condition minimale est qu'un fichier profile existe et qu'il contienne la définition de minimum deux variables d'environnement que sont \emph{\$HOME} et \emph{\$PATH}.
-Cette partie est implémentée entre les lignes 138 et 168
+Avant de lancer l'interpréteur de bash, une condition minimale est qu'un fichier \emph{profile} existe et qu'il contienne la définition de minimum deux variables d'environnement que sont \emph{\$HOME} et \emph{\$PATH}.
+Cette partie est implémentée entre les lignes 138 et 168.
 
 \section{Implémentation du bash}
 
 La première partie du travail consiste en une implémentation d'un interpréteur de commandes UNIX avec comme commandes de base :
 \begin{itemize}
-	\item cd : Pour \emph{Change Directory}, qui change le répertoire de travail
-	\item pwd : Pour \emph{Print working directory}, qui imprime le répertoire de travail
-	\item alias : Pour la création d'alias
+	\item cd : pour \emph{Change Directory}, qui change le répertoire de travail
+	\item pwd : pour \emph{Print working directory}, qui imprime le répertoire de travail
+	\item alias : pour la création d'alias
 \end{itemize}
 
 Le gros du travail commence à la ligne 170 avec la lecture de l'entrée standard (clavier). Le traitement de la commande demandée par l'utilisateur se fait via la fonction \emph{tokenize\_input} à la ligne 192. Elle sera expliquée avec plus de précision plus tard.
 
 Entre les lignes 195 et 198, c'est la gestion de création de variables d'environnement, si le caractère = est trouvé dans la ligne entrée par l'utilisateur qui utilise la fonction du système UNIX : \emph{setenv}.
 
-Les lignes 199 et 210 servent à imprimer le contenu d'une variable d'environnement si la ligne de commande entrée par l'utilisateur commence par un \$ et n'as pas d'autres arguments qui utilise la fonction du système UNIX : \emph{getenv}
+Les lignes 199 et 210 servent à imprimer le contenu d'une variable d'environnement si la ligne de commande entrée par l'utilisateur commence par un \$ et n'a pas d'autres arguments qui utilisent la fonction du système UNIX : \emph{getenv}.
 
-Les lignes 212 à 236 servent à lancer des commandes créées par moi-même. Dans cette partie, il faut faire une gestion de remplacement des alias qui se fait à la ligne 214 à l'aide de la fonction \emph{replace\_environment\_vars}. Elle sera aussi expliquée plus loin.
+Les lignes 212 à 236 servent à lancer des commandes créées par moi-même. Dans cette partie, il faut faire une gestion de remplacement des alias, qui se fait à la ligne 214 à l'aide de la fonction \emph{replace\_environment\_vars}. Elle sera aussi expliquée plus loin.
 \pagebreak
 
 La gestion des commandes existantes se fait dans un pseudo mapping dans la structure \emph{shell\_map} qui contient :
 \begin{itemize}
 	\item name : correspond à la commande que l'utilisateur doit rentrer
-	\item fct : un pointeur de fonction qui sera exécutée
-	\item help : Un description de la fonction
-	\item argc : Le nombre d'arguments max possible
-	\item args : Une description des arguments attendus si nécessaire
+	\item fct : un pointeur sur la fonction qui sera exécutée
+	\item help : une description de la fonction
+	\item argc : le nombre d'arguments max possible
+	\item args : une description des arguments attendus si nécessaire
 \end{itemize}
 
 Aux lignes 217 à 220, la recherche de la commande est faite et si elle est trouvée, alors on rentre dans le bloc 222 à 232 sinon on averti l'utilisateur que la commande demandée n'existe pas et on recommence.
@@ -53,45 +53,44 @@ Aux lignes 222 à 232, la vérification que le nombre d'arguments est correcte e
 \section{Commandes}
 Les différentes commandes seront décrites dans cette section.
 \subsection{help}
-La commande \emph{help} n'était pas demandée explicitement dans le travail, mais une aide pour connaître les commandes implémentées est toujours la bien venue; et vu que la structure du mapping des fonctions s'y portait bien, il a été simple de faire cet affichage. Cela consiste en une simple boucle qui traverse le mapping pour un affichage plutôt correct.
+La commande \emph{help} n'était pas demandée explicitement dans le travail, mais une aide pour connaître les commandes implémentées est toujours la bienvenue; et puisque que la structure du mapping des fonctions s'y portait bien, il a été simple de faire cet affichage. Cela consiste en une simple boucle qui traverse le mapping pour un affichage plutôt correct.
 \subsection{exit/quit}
 Ces deux commandes appellent la même fonction \emph{do\_exit} qui ferme l'interpréteur de commandes.
 \subsection{pwd}
-La commande \emph{Print working directory} est un wrapper qui appelle simplement la fonction du système UNIX : \emph{getcwd}. Le plus du wrapper est la gestion d'un buffer qui peut contenir un path aussi grand que nécessaire (pour autant que la mémoire le permette) avec un agrandissement du buffer qui contiendra le path par puissance de 2 avec comme valeur initiale 32 caratères.
+La commande \emph{Print working directory} est un wrapper qui appelle simplement la fonction du système UNIX : \emph{getcwd}. L'apport du wrapper est la gestion d'un buffer qui peut contenir un path aussi grand que nécessaire (pour autant que la mémoire le permette) avec un agrandissement du buffer qui contiendra le path par puissance de 2 avec comme valeur initiale 32 caractères.
 \subsection{cd}
-La commande \emph{change directory}, est un wrapper qui appelle la fonction du système UNIX : \emph{chdir}.
-Un traitement supplémentaire doit être fait lorsque la commande \emph{cd} est appelée sans arguments, ce qui a pour fonction de déplacer le répertoire de travail à la position de la variable d'environnement \emph{\$HOME}.
+La commande \emph{change directory} est un wrapper qui appelle la fonction du système UNIX : \emph{chdir}.
+Un traitement supplémentaire doit être fait lorsque la commande \emph{cd} est appelée sans argument, ce qui a pour fonction de déplacer le répertoire de travail à la position de la variable d'environnement \emph{\$HOME}.
 J'ai décidé de rendre cette fonction la plus bavarde possible lorsqu'elle rencontre une erreur pour être le plus clair possible et car les erreurs retournées sont possiblement utiles pour l'utilisateur qui appelle \emph{cd}.
 \subsection{alias}
 La commande \emph{alias} est une implémentation complètement maison. J'ai décidé de créer et d'utiliser un arbre binaire pour la gestion des alias. La description de l'implémentation de l'arbre binaire sera faite plus tard.
 La commande alias a trois comportements distincts.
 \subsubsection{sans argument}
-Quand \emph{alias} est appelée sans arguments, la commande imprime tous les alias existants dans le système. Géré aux lignes 390 à 392.
+Quand \emph{alias} est appelée sans argument, la commande imprime tous les alias existants dans le système. Géré aux lignes 390 à 392.
 \subsubsection{un argument contenant le caractère =}
-Dans ce cas là, la commande va créer dans les système un alias avec le contenu se trouvant à gauche de l'égalité pointant vers le contenu se trouvant à droite. Géré aux lignes 405 à 407.
+Dans ce cas là, la commande va créer dans les systèmes un alias avec le contenu se trouvant à gauche de l'égalité pointant vers le contenu se trouvant à droite. Géré aux lignes 405 à 407.
 \subsubsection{un argument sans =}
 Ce dernier cas ne fait qu'imprimer, s'il existe, l'alias demandé avec ce vers quoi il pointe. Géré aux lignes 399 à 403.
 \section{Arbre binaire}
 Comme décrit plus tôt dans ce document, la gestion des alias se fait à l'aide d'un arbre binaire.
 Je me suis aidé d'un livre théorique d'algorithmie \cite{ref}. Toutes les fonctions liées à l'arbre binaire se trouvent dans le fichier \emph{binary\_tree.c}. L'arbre binaire a pour but d'accélérer la recherche dans un pool de données, s'il est totalement équilibré (pas implémenté pour l'instant) en $O(\log_2(n))$ au lieu de $O(n)$ dans un tableau non ordonné.
 
-Les spécificités de cet arbre binaire est qu'il devait travailler avec des paires de valeurs pour la gestion des alias avec la structure créée pour l'occasion nommée \emph{alias\_t}. La clé de comparaison est le champ \emph{var} de la dite structure.
+La spécificité de cet arbre binaire est qu'il devait travailler avec des paires de valeurs pour la gestion des alias avec la structure créée pour l'occasion, nommée \emph{alias\_t}. La clé de comparaison est le champ \emph{var} de ladite structure.
 \section{Les fonctions supplémentaires}
 Certaines fonctions supplémentaires pour des traitements spécifiques ont dû être ajoutées pour la lisibilité du code.
 \subsection{tokenize\_input}
-Cette fonction sert à parser la ligne qu'un utilisateur a entré et la retourne sous forme d'un tableau qui contient tous les éléments. La partition de la ligne se fait entre chaque espace.
+Cette fonction sert à parser la ligne qu'un utilisateur a entrée et la retourne sous forme d'un tableau qui contient tous les éléments. La partition de la ligne se fait entre chaque espace.
 \subsection{print\_introduction}
-Cette fonction sert à imprimer la même introduction à chaque début de commande de l'utilisateur. Elle donne la date et l'heure actuelle.
+Cette fonction sert à imprimer la même introduction à chaque début de commande de l'utilisateur. Elle donne la date et l'heure actuelles.
 \subsection{extract\_environment\_var}
-Cette fonction sert à départager une chaîne de caractère contenant le caractère = et retourne les éléments à gauche et à droite dans une structure \emph{alias\_t}.
+Cette fonction sert à départager une chaîne de caractères contenant le caractère = et retourne les éléments à gauche et à droite dans une structure \emph{alias\_t}.
 \subsection{change\_alias}
-Cette fonction est appelée avant la recherche d'une commande car elle remplace les alias dans la ligne de commande de l'utilisateur par leur contenu. Cette fonction tient en compte des récursions et s'arrête dès qu'elle en aperçoit une à l'aide d'un arbre binaire interne à la fonction.
+Cette fonction est appelée avant la recherche d'une commande car elle remplace les alias dans la ligne de commande de l'utilisateur par leur contenu. Cette fonction tient compte des récursions et s'arrête dès qu'elle en aperçoit une à l'aide d'un arbre binaire interne à la fonction.
 \subsection{replace\_environment\_vars}
 Cette fonction sert à remplacer toutes les variables d'environnement (commençant par un \$) existantes dans la commande entrée par l'utilisateur.
 \section{Conclusion}
-Ce travail étant fait seul au lieu de deux, je trouve que cette partie est plutôt bien aboutie.
-Une amélioration à prévoir est de gérer les alias qui ont un contenu avec des espaces. Ceci devrait être fait dans la fonction tokenize\_input lors de la séparation de la ligne avec des espaces, il faut vérifier si elle ne contient pas le caractère " et doit contenir jusqu'au prochain ".
-Sinon tou 
+Ce travail est fait seul et non en binôme.
+Une amélioration à prévoir est de gérer les alias qui ont un contenu avec des espaces. Ceci devrait être fait dans la fonction \emph{tokenize\_input} lors de la séparation de la ligne avec des espaces, il faut vérifier si elle ne contient pas le caractère " et, le cas échéant, utiliser le contenu entre " comme un seul et unique argument.
 \bibliographystyle{plain}
 \bibliography{biblio}
 \end{document}

@@ -21,6 +21,8 @@
 #include <errno.h>
 #include <assert.h>
 #include <sys/wait.h>
+#include <stdbool.h>
+#include <sys/stat.h>
 #include "binary_tree.h"
 
 #define MAX_READ 255
@@ -128,6 +130,8 @@ struct shell_map shell_cmds[NB_CMDS] = { /// A simple mapping that maps the comm
 };
 
 int main() {
+    setbuf(stderr, NULL);
+    setbuf(stdout, NULL);
     char input[MAX_READ + 1] = "";
     char **parsed = NULL;
     int err = 0;
@@ -238,14 +242,58 @@ int main() {
                             }
                             //Taking care of the NULL terminating
                             argv[size_parsed] = NULL;
-                            int child_pid = fork();
-                            if (child_pid < 0){
-                                fprintf(stderr, "ERROR SHELL: Could not fork before executing command\n");
-                            } else if (child_pid == 0){ // child process
-                                execve(argv[0], &argv[0], (char *const *) 0);
-                            } else { // Parent process
-                                int status;
-                                wait(&status);
+
+                            char *path = argv[0];
+                            bool found = true;
+                            if (strchr(argv[0], '/') == NULL) { // Need to find the program
+                                size_t arg_len = strlen(argv[0]);
+                                const char *env = getenv("PATH");
+                                char *iterable_path = calloc(strlen(env), sizeof(char));
+                                char *to_free = iterable_path;
+                                assert(iterable_path);
+                                strncpy(iterable_path, env, strlen(env));
+
+                                char *end_path;
+                                found = false;
+
+                                do {
+                                    end_path = strchr(iterable_path, ':');
+                                    if (end_path != NULL) {
+                                        end_path[0] = '\0';
+                                        end_path++;
+                                    }
+                                    char *toCheck = calloc(arg_len + strlen(iterable_path) + 2, sizeof(char));
+                                    assert(toCheck);
+                                    strcpy(toCheck, iterable_path);
+                                    strcat(toCheck, "/");
+                                    strcat(toCheck, argv[0]);
+
+                                    struct stat fileStat;
+                                    if (stat(toCheck, &fileStat) == 0 && fileStat.st_mode & S_IXUSR) {
+                                        // Found the program to execute
+                                        found = true;
+                                        path = toCheck;
+                                        break;
+                                    }
+
+                                    iterable_path = end_path;
+                                } while (end_path != NULL);
+                                free(to_free);
+                            }
+
+
+                            if (found) {
+                                int child_pid = fork();
+                                if (child_pid < 0) {
+                                    fprintf(stderr, "ERROR SHELL: Could not fork before executing command\n");
+                                } else if (child_pid == 0) { // child process
+                                    execve(path, &argv[0], (char *const *) 0);
+                                } else { // Parent process
+                                    int status;
+                                    wait(&status);
+                                }
+                            } else {
+                                fprintf(stderr, "ERROR SHELL: Command not found\n");
                             }
                         }
                     }
@@ -256,8 +304,6 @@ int main() {
             perror("Calloc Error\n");
             exit(EXIT_FAILURE);
         }
-        fflush(stderr);
-        fflush(stdout);
     }
     return EXIT_SUCCESS;
 }

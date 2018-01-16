@@ -245,6 +245,7 @@ int main() {
 
                             char *path = argv[0];
                             bool found = true;
+                            bool path_to_free = false;
                             if (strchr(argv[0], '/') == NULL) { // Need to find the program
                                 size_t arg_len = strlen(argv[0]);
                                 const char *env = getenv("PATH");
@@ -273,8 +274,10 @@ int main() {
                                         // Found the program to execute
                                         found = true;
                                         path = toCheck;
+                                        path_to_free = true;
                                         break;
                                     }
+                                    free(toCheck);
 
                                     iterable_path = end_path;
                                 } while (end_path != NULL);
@@ -294,6 +297,10 @@ int main() {
                                 }
                             } else {
                                 fprintf(stderr, "ERROR SHELL: Command not found\n");
+                            }
+
+                            if (path_to_free) {
+                                free(path);
                             }
                         }
                     }

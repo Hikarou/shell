@@ -129,7 +129,7 @@ struct shell_map shell_cmds[NB_CMDS] = { /// A simple mapping that maps the comm
         {"alias", do_alias, "define or display aliases",               1, "[alias-name[=string]]"},
 };
 
-int main() {
+int main(int argc, const char *argv[]) {
     setbuf(stderr, NULL);
     setbuf(stdout, NULL);
     char input[MAX_READ + 1] = "";
@@ -236,18 +236,18 @@ int main() {
                                 err = ERR_ARGS;
                             }
                         } else { //Command does not exist in intern => execve !
-                            char *argv[size_parsed + 1]; // NULL terminated array
+                            char *argv_local[size_parsed + 1]; // NULL terminated array
                             for (int i = 0; i < size_parsed; ++i) {
-                                argv[i] = parsed[i];
+                                argv_local[i] = parsed[i];
                             }
                             //Taking care of the NULL terminating
-                            argv[size_parsed] = NULL;
+                            argv_local[size_parsed] = NULL;
 
-                            char *path = argv[0];
+                            char *path = argv_local[0];
                             bool found = true;
                             bool path_to_free = false;
-                            if (strchr(argv[0], '/') == NULL) { // Need to find the program
-                                size_t arg_len = strlen(argv[0]);
+                            if (strchr(argv_local[0], '/') == NULL) { // Need to find the program
+                                size_t arg_len = strlen(argv_local[0]);
                                 const char *env = getenv("PATH");
                                 char *iterable_path = calloc(strlen(env), sizeof(char));
                                 char *to_free = iterable_path;
@@ -267,7 +267,7 @@ int main() {
                                     assert(toCheck);
                                     strcpy(toCheck, iterable_path);
                                     strcat(toCheck, "/");
-                                    strcat(toCheck, argv[0]);
+                                    strcat(toCheck, argv_local[0]);
 
                                     struct stat fileStat;
                                     if (stat(toCheck, &fileStat) == 0 && fileStat.st_mode & S_IXUSR) {
@@ -290,7 +290,7 @@ int main() {
                                 if (child_pid < 0) {
                                     fprintf(stderr, "ERROR SHELL: Could not fork before executing command\n");
                                 } else if (child_pid == 0) { // child process
-                                    execve(path, &argv[0], (char *const *) 0);
+                                    execve(path, &argv_local[0], (char *const *) 0);
                                 } else { // Parent process
                                     int status;
                                     wait(&status);

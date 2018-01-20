@@ -23,6 +23,7 @@
 #include <sys/wait.h>
 #include <stdbool.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include "binary_tree.h"
 
 #define MAX_READ 255
@@ -130,6 +131,19 @@ struct shell_map shell_cmds[NB_CMDS] = { /// A simple mapping that maps the comm
 };
 
 int main(int argc, const char *argv[]) {
+    // If called with an argument
+    // Use the file as stdin
+    // Equals shell < argv[1]
+    if (argc == 2) {
+        close(0); // close stdin
+
+        // open will always take the smallest fd => 0
+        if (open(argv[1], O_RDONLY) == -1) {
+            fprintf(stderr, "Could not open the file given in parameter\n");
+            exit(EXIT_FAILURE);
+        }
+    }
+
     setbuf(stderr, NULL);
     setbuf(stdout, NULL);
     char input[MAX_READ + 1] = "";

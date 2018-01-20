@@ -21,6 +21,6 @@ $(OUTPUT): $(OUTPUT).c binary_tree.o
 	$(CC) $(CFLAGS) $< -c
 
 clean:
-	rm -f *.o $(OUTPUT) PremierRapport/Rapport1.{a,b,l,p,s}*
+	rm -f *.o $(OUTPUT) PremierRapport/Rapport1.{a,b,l,s}* SecondRapport/Rapport2.{a,b,l,s}*
 
 .PHONY: clean run

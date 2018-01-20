@@ -211,22 +211,25 @@ int main(int argc, const char *argv[]) {
                 err = tokenize_input(input, &parsed, &size_parsed);
                 if (err == ERR_OK) {
                     // Handling the redirections :
-                    bool redirected = false;
+                    bool stdin_redirected = false;
+                    bool stdout_redirected = false;
                     int stdin_copy = 0, stdout_copy = 1;
+                    int stdin_tmp = 0, stdout_tmp = 1;
                     for (int i = 0; i < size_parsed; i++) {
                         if (strcmp(parsed[i], ">") == 0 && i != size_parsed - 1) {
                             size_parsed = i;
-                            redirected = true;
-                            stdin_copy = dup(0);
+                            stdout_redirected = true;
                             stdout_copy = dup(1);
                             close(1);
 
                             // open will always take the smallest fd => 1
-                            if (open(parsed[i + 1], O_WRONLY | O_CREAT, 0644) == -1) {
-                                redirected = false;
-                                fprintf(stderr, "Could not open the file to redirect to\n");
+                            if ((stdout_tmp = open(parsed[i + 1], O_WRONLY | O_CREAT, 0644)) == -1) {
+                                stdout_redirected = false;
+                                fprintf(stderr, "Could not create the file to redirect to\n");
                                 dup2(stdout_copy, 1);
                             }
+                        } else if (strcmp(parsed[i], "<") == 0 && i != size_parsed - 1) {
+
                         }
                     }
 
@@ -338,9 +341,11 @@ int main(int argc, const char *argv[]) {
                             }
                         }
                     }
-                    if (redirected) {
-                        dup2(stdin_copy, 0);
+
+                    if (stdout_redirected) {
+                        close(stdout_tmp);
                         dup2(stdout_copy, 1);
+                        close(stdout_copy);
                     }
                 }
             }

@@ -229,7 +229,17 @@ int main(int argc, const char *argv[]) {
                                 dup2(stdout_copy, 1);
                             }
                         } else if (strcmp(parsed[i], "<") == 0 && i != size_parsed - 1) {
+                            size_parsed = i;
+                            stdin_redirected = true;
+                            stdin_copy = dup(0);
+                            close(0);
 
+                            // open will always take the smallest fd => 1
+                            if ((stdin_tmp = open(parsed[i + 1], O_RDONLY)) == -1) {
+                                stdin_redirected = false;
+                                fprintf(stderr, "Could not open the file to read from\n");
+                                dup2(stdin_copy, 0);
+                            }
                         }
                     }
 
@@ -346,6 +356,11 @@ int main(int argc, const char *argv[]) {
                         close(stdout_tmp);
                         dup2(stdout_copy, 1);
                         close(stdout_copy);
+                    }
+                    if (stdin_redirected) {
+                        close(stdin_tmp);
+                        dup2(stdin_copy, 0);
+                        close(stdin_copy);
                     }
                 }
             }

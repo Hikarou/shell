@@ -7,6 +7,7 @@ help:
 	@echo ""
 	@echo "Possiblities in the makefile :"
 	@echo -e " - help\t\t: Shows this help page (default)"
+	@echo -e " - shell\t: Compiles the interpretor"
 	@echo -e " - run\t\t: Runs the interpretor"
 	@echo -e " - clean\t: Cleans everything that was created"
 

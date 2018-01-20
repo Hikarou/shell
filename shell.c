@@ -210,6 +210,26 @@ int main(int argc, const char *argv[]) {
                 //tokenize the line
                 err = tokenize_input(input, &parsed, &size_parsed);
                 if (err == ERR_OK) {
+                    // Handling the redirections :
+                    bool redirected = false;
+                    int stdin_copy = 0, stdout_copy = 1;
+                    for (int i = 0; i < size_parsed; i++) {
+                        if (strcmp(parsed[i], ">") == 0 && i != size_parsed - 1) {
+                            size_parsed = i;
+                            redirected = true;
+                            stdin_copy = dup(0);
+                            stdout_copy = dup(1);
+                            close(1);
+
+                            // open will always take the smallest fd => 1
+                            if (open(parsed[i + 1], O_WRONLY | O_CREAT, 0644) == -1) {
+                                redirected = false;
+                                fprintf(stderr, "Could not open the file to redirect to\n");
+                                dup2(stdout_copy, 1);
+                            }
+                        }
+                    }
+
                     // New environment variable
                     if (size_parsed == 1 && strchr(input, '=') != NULL) {
                         alias_t *new = extract_environment_var(parsed[0]);
@@ -317,6 +337,10 @@ int main(int argc, const char *argv[]) {
                                 free(path);
                             }
                         }
+                    }
+                    if (redirected) {
+                        dup2(stdin_copy, 0);
+                        dup2(stdout_copy, 1);
                     }
                 }
             }

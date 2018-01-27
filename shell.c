@@ -223,9 +223,9 @@ int main(int argc, const char *argv[]) {
                             close(1);
 
                             // open will always take the smallest fd => 1
-                            if ((stdout_tmp = open(parsed[i + 1], O_WRONLY | O_CREAT, 0644)) == -1) {
+                            if ((stdout_tmp = open(parsed[i + 1], O_WRONLY | O_CREAT | O_EXCL, 0644)) == -1) {
                                 stdout_redirected = false;
-                                fprintf(stderr, "Could not create the file to redirect to\n");
+                                fprintf(stderr, "Could not create the file to redirect to, or it already exists\n");
                                 dup2(stdout_copy, 1);
                             }
                         } else if (strcmp(parsed[i], "<") == 0 && i != size_parsed - 1) {
@@ -234,7 +234,7 @@ int main(int argc, const char *argv[]) {
                             stdin_copy = dup(0);
                             close(0);
 
-                            // open will always take the smallest fd => 1
+                            // open will always take the smallest fd => 0
                             if ((stdin_tmp = open(parsed[i + 1], O_RDONLY)) == -1) {
                                 stdin_redirected = false;
                                 fprintf(stderr, "Could not open the file to read from\n");

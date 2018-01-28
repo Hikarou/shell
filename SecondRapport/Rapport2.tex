@@ -68,7 +68,7 @@ Il y a 6 variables qui servent à la gestion des différentes redirections :
  \item std\{in,out\}\_copy : Une copie du descripteur de fichier qu'occupait, respectivement, l'entrée standard et la sortie standard, seulement si le descripteur en question a été redirigé.
  \item std\{in,out\}\_tmp : Le registre qui contiendra le, respectivement, l'entrée standard temporaire et la sortie standard temporaire.
 \end{itemize}
-
+\pagebreak
 \subsection{Redirection de la sortie}
 A l'encontre du caractère \verb?>?, il faut gérer la redirection de la sortie standard vers un fichier donné en paramètre juste après.
 
@@ -117,6 +117,7 @@ Quand \emph{alias} est appelée sans argument, la commande imprime tous les alia
 Dans ce cas là, la commande va créer dans les systèmes un alias avec le contenu se trouvant à gauche de l'égalité pointant vers le contenu se trouvant à droite. Géré aux lignes 405 à 407.
 \subsubsection{un argument sans =}
 Ce dernier cas ne fait qu'imprimer, s'il existe, l'alias demandé avec ce vers quoi il pointe. Géré aux lignes 399 à 403.
+\pagebreak
 \section{Arbre binaire}
 Comme décrit plus tôt dans ce document, la gestion des alias se fait à l'aide d'un arbre binaire.
 Je me suis aidé d'un livre théorique d'algorithmie \cite{ref}. Toutes les fonctions liées à l'arbre binaire se trouvent dans le fichier \emph{binary\_tree.c}. L'arbre binaire a pour but d'accélérer la recherche dans un pool de données, s'il est totalement équilibré (pas implémenté pour l'instant) en $O(\log_2(n))$ au lieu de $O(n)$ dans un tableau non ordonné.
@@ -134,6 +135,7 @@ Cette fonction sert à départager une chaîne de caractères contenant le carac
 Cette fonction est appelée avant la recherche d'une commande car elle remplace les alias dans la ligne de commande de l'utilisateur par leur contenu. Cette fonction tient compte des récursions et s'arrête dès qu'elle en aperçoit une à l'aide d'un arbre binaire interne à la fonction.
 \subsection{replace\_environment\_vars}
 Cette fonction sert à remplacer toutes les variables d'environnement (commençant par un \$) existantes dans la commande entrée par l'utilisateur.
+\pagebreak
 \section{Conclusion}
 Ce travail est fait seul et non en binôme.
 Une amélioration à prévoir est de gérer les alias qui ont un contenu avec des espaces. Ceci devrait être fait dans la fonction \emph{tokenize\_input} lors de la séparation de la ligne avec des espaces, il faut vérifier si elle ne contient pas le caractère " et, le cas échéant, utiliser le contenu entre " comme un seul et unique argument.
